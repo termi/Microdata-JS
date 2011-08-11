@@ -9,8 +9,9 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 1.2
- *  changeLog: 1.2 [11.08.11] replace all hasAttribute to getAttribute for IE7
+ * @version 1.3
+ *  changeLog: 1.3 [11.08.11] [bug*] Fix bug with getAttribute
+ * 			   1.2 [11.08.11] replace all hasAttribute to getAttribute for IE7
  *   
  */
 
@@ -76,7 +77,9 @@ function($$, _toArray) {
 		var root = item,
 			pending = [],
 			props = [],
-			properties = {},
+			properties = {
+				"length" : 0
+			},
 			references = [],
 			children,
 			current;
@@ -107,7 +110,7 @@ function($$, _toArray) {
 
 			while((parent = parent.parentNode) !== null && parent.nodeType === 1) {
 				ancestors.push(parent);
-				if(parent.getAttribute("itemscope")) {
+				if(!!parent.getAttribute("itemscope") || parent.getAttribute("itemscope") === "") {
 					scope = parent;
 					break;
 				}
@@ -135,7 +138,7 @@ function($$, _toArray) {
 						// Find the nearest ancestor element with an itemscope attribute
 						while((elementParent = elementParent.parentNode) !== null &&
 							   elementParent.nodeType === 1) {
-							if (elementParent.getAttribute("itemscope")) {
+							if (!!elementParent.getAttribute("itemscope") || elementParent.getAttribute("itemscope") === "") {
 								elementScope = elementParent;
 								break;
 							}
@@ -161,13 +164,13 @@ function($$, _toArray) {
 				// This is a necessary deviation from the normal algorithm because
 				// we can not modify the Element prototype in IE7, so we recursively
 				// calculate the properties for each property that has an itemscope.
-				if(current.getAttribute("itemscope")) {
+				if(!!current.getAttribute("itemscope") || current.getAttribute("itemscope") === "") {
 					current['itemScope'] = true;
 					current['properties'] = getProperties(current);
 				}
 			}
 			
-			if (!current.getAttribute("itemscope")) {
+			if (!current.getAttribute("itemscope") && current.getAttribute("itemscope") !== "") {
 				// Push all the child elements of current onto pending, in tree order
 				// (so the first child of current will be the next element to be
 				// popped from pending).
@@ -195,7 +198,10 @@ function($$, _toArray) {
 			
 			for(var i = 0, l = p_names.length ; i < l ; ++i) {
 				_name = p_names[i];
-				if(!~properties["names"].indexOf(_name))properties["names"].push(_name);
+				if(!~properties["names"].indexOf(_name)) {
+					properties["names"].push(_name);
+					properties["length"]++;
+				}
 				//"values" property
 				//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
 				((properties[_name] || (properties[_name] = []))["values"] || (properties[_name]["values"] = [])).push(prop_value);
@@ -205,6 +211,7 @@ function($$, _toArray) {
 
 		return properties;
 	}
+	
 	
 	function fixItemElement(_element) {
 		_element['itemScope'] = true;
@@ -242,6 +249,8 @@ function($$, _toArray) {
 				!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 				(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
 				matches.push(fixItemElement(node));
+				
+				node.toJSON = microdata_toJSON;
 			}
 		}
 		
@@ -257,7 +266,7 @@ else (function(){
 	//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
 	//TODO:: Check for compliance with FINALE Microdata specification.
 	function micFrm_check() {
-		if(window["PropertyNodeList"] && !window["PropertyNodeList"].prototype["values"])
+		if(window["PropertyNodeList"] && !("values" in window["PropertyNodeList"].prototype))
 			window["PropertyNodeList"].prototype.__defineGetter__("values", function() { return this.getValues(); });
 	}
 	
