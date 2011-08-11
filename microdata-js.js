@@ -1,5 +1,6 @@
 ﻿/*
- * @author: Egor / 10.08.2011
+ * @author: Egor
+ * @date: 10.08.2011
  *
  *  Implementation of the HTMl5 Microdata specification.
  *
@@ -8,16 +9,18 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * dependenses:
- *  1. $$ - querySelectorAll with toArray, and with support a)childrens selector ">*"
- *  2. _toArray - toArray function
- *
  * @version 1.2
  *  changeLog: 1.2 [11.08.11] replace all hasAttribute to getAttribute for IE7
  *   
  */
 
-if(!document.getItems)(function($$, _toArray) {
+
+if(!document.getItems)(
+/**
+ * @param {!Function} $$ querySelectorAll with toArray (must return Array)
+ * @param {!Function} _toArray Function must return an Array representation of the enumeration.
+ */
+function($$, _toArray) {
 	/**
 	 * Returns the itemValue of an Element.
 	 * http://www.w3.org/TR/html5/microdata.html#values
@@ -37,7 +40,7 @@ if(!document.getItems)(function($$, _toArray) {
 		else if(elementName === 'OBJECT')
 			return element.data;
 		else if (elementName === 'TIME' && element.getAttribute('datetime'))
-			return element.dateTime;//TODO:: Проверить в IE
+			return element.dateTime;//TODO:: Check IE[7,6]
 		else
 			return 'textContent' in element ? element.textContent :
 				element.innerText;//IE-only fallback
@@ -179,7 +182,7 @@ if(!document.getItems)(function($$, _toArray) {
 		//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
 		properties["names"] = [];
 		
-		properties["namedItem"] = function(p_name){return this[p_name]}//TODO:: Check for compliance with Microdata specification.
+		properties["namedItem"] = function(p_name){return this[p_name]}//TODO:: Check for compliance with FINALE Microdata specification.
 		
 		props.forEach(function(property) {
 			var p_names = property.getAttribute("itemprop").split(" "),
@@ -193,7 +196,7 @@ if(!document.getItems)(function($$, _toArray) {
 			for(var i = 0, l = p_names.length ; i < l ; ++i) {
 				_name = p_names[i];
 				if(!~properties["names"].indexOf(_name))properties["names"].push(_name);
-				//Реализация сво-ва values
+				//"values" property
 				//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
 				((properties[_name] || (properties[_name] = []))["values"] || (properties[_name]["values"] = [])).push(prop_value);
 				properties[_name].push(property);
@@ -242,17 +245,19 @@ if(!document.getItems)(function($$, _toArray) {
 			}
 		}
 		
-		// is there a way to cast to NodeList
 		return matches;
 	}
-})($$, $A)
+})(
+	$$,//Youre own function(){return toArray(querySelectorAll(#selector#))} function
+	$A//Youre own toArray function
+)
+
 else (function(){
-	//В Opera 12 реализована поддержка microdata, но не реализовано свойство values для PropertyNodeList
-	//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api вроде как сказано, что у PropertyNodeList должно быть свойство values
-	// реализуем его для Оперы
-	//TODO:: Check for compliance with Microdata specification.
+	//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
+	//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
+	//TODO:: Check for compliance with FINALE Microdata specification.
 	function micFrm_check() {
-		if(window["PropertyNodeList"] && !window["PropertyNodeList"].prototype["values"])//Реализация сво-ва values
+		if(window["PropertyNodeList"] && !window["PropertyNodeList"].prototype["values"])
 			window["PropertyNodeList"].prototype.__defineGetter__("values", function() { return this.getValues(); });
 	}
 	
