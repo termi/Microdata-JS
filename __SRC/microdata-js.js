@@ -371,19 +371,12 @@ function(global, $$, _toArray) {
 			"fixItemElement" : function(val) { return val }
 		};
 		
-		function $addEventListener(elt, event, listener) {
-			if(document.addEventListener)
-				elt.addEventListener(event, listener, false);
-			else
-				elt.attachEvent('on' + event, listener);
-		}
-		
 		//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
 		//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
 		//TODO:: Check for compliance with FINALE Microdata specification.
 		if(!global["PropertyNodeList"]) {
-			$addEventListener(global, "DOMContentLoaded", fixPrototypes.bind(global, global)),
-				$addEventListener(global, "load", fixPrototypes.bind(global, global))
+			global.addEventListener("DOMContentLoaded", fixPrototypes.bind(global, global), false),
+				global.addEventListener("load", fixPrototypes.bind(global, global), false)
 		}
 		else if(!("values" in global["PropertyNodeList"].prototype)) {
 			global["PropertyNodeList"].prototype.__defineGetter__("values", function() {
