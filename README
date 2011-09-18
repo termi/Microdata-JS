@@ -1,0 +1,6 @@
+Implementation of the HTMl5 Microdata specification.
+
+ + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
+
+TODO:
+ 1. Microdata_to_JSON function

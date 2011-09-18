@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+<style>
+
+</style>
+<!--[if lt IE 9]>
+<script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
+<![endif]-->
+<script src=a.js></script>
+<script src=../microdata-js.js></script>
+<script src=microdataTemplater.js></script>
+<script>
+window.onload = function() {
+	var data = {
+		account : {
+			id : 15654,
+			name : "George Nikolaev",
+			nick : "termi"
+		},
+		messages : [
+			{
+				from : {
+					id : "",
+					name : "Yusupov Andry",
+					nick : "sidor"
+				},
+				body : "Hi to <b>all</b>!!!"
+			},
+			{
+				from : {
+					id : "",
+					name : "Yusupov Andry",
+					nick : "sidor"
+				},
+				body : "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+			},
+			{
+				from : {
+					id : "",
+					name : "Vasa Shtovich",
+					nick : "vazelin"
+				},
+				body : "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+			},
+			{
+				from : {
+					id : "",
+					name : "Chpreha Ugorgy",
+					nick : "sochfgy"
+				},
+				body : "Quis autem vel eum iure reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla pariatur?"
+			},
+			{
+				from : {
+					id : "",
+					name : "Tyhon Gurgen",
+					nick : "gora"
+				},
+				body : "Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio, cumque nihil impedit, quo minus id, quod maxime placeat, facere possimus, omnis voluptas assumenda est, omnis dolor repellendus."
+			}
+		]
+	}
+	
+	var /** @type {Node} */
+		chatTemplate = document.getItems("template:chat"),
+		curData = data;
+	
+	if(chatTemplate)
+		$A(chatTemplate).forEach(function(itt) {
+			microdataItem_to_template(itt, curData);
+		});
+}
+</script>
+
+</head>
+
+<body>
+<section itemscope itemtype="template:chat">
+	<header>
+		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>
+		<p><span itemprop=account.name></span> (<span itemprop=account.nick></span>)
+	</header>
+	
+	<ul class="data">
+		<li itemprop=messages itemscope itemtype="template:chat/message">
+			<span itemprop=from.name>
+				Message from #from.name# (<span itemprop="from.nick"></span>)
+			</span>
+			<div itemprop=body>
+	</ul>
+</section>
+
+<section itemscope itemtype="template:chat">
+	<header>
+		ID:<p itemprop=account.id[]>#account.id#<span>|</span></p>
+		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>
+		<p><span itemprop=account.name></span> (<span itemprop=account.nick></span>)
+		<p itemprop="account.name account.nick">TEST:Name: #account.name# | Nick:(#account.nick#)
+	</header>
+	
+	<ul class="data">
+		<li itemprop=messages itemscope itemtype="template:chat/message">
+			<span itemprop=from.name>
+				Message from #from.name# (<span itemprop="from.nick"></span>)
+			</span>
+			<div itemprop=body>
+	</ul>
+	
+	<footer>
+		<p>Новое сообщение:</p>
+		<textarea></textarea>
+		<div class="btns">
+			<p data-action=send>Send
+			<p data-action=attch_file>Attache file<!-- TODO -->
+			<p data-action=smiles>:)
+			
