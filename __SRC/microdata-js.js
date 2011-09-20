@@ -23,7 +23,61 @@
  *   
  */
 
-(!document["getItems"] ? (
+MicrodataJS = global["MicrodataJS"] = {};
+/**
+ * Returns the itemValue of an Element.
+ * http://www.w3.org/TR/html5/microdata.html#values
+ * or http://dev.w3.org/html5/md/#dom-itemvalue
+ *
+ * @param {Element} element The element to extract the itemValue for.
+ * @return {string|Node} The itemValue of the element.
+ */
+getItemValue = MicrodataJS["getItemValue"] = function(element) {
+	var elementName = element.nodeName;
+
+	if(element.getAttribute("itemscope") !== null)//hasAttribute("itemscope")
+		return element;
+	else if(elementName === 'META')
+		return element.content;
+	else if(~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName))
+		return element.src;
+	else if(~['A', 'AREA', 'LINK'].indexOf(elementName))
+		return element.href;
+	else if(elementName === 'OBJECT')
+		return element.data;
+	else if (elementName === 'TIME' && element.getAttribute('datetime'))
+		return element.dateTime;//TODO:: Check IE[7,6]
+	else
+		return 'textContent' in element ? element.textContent :
+			element.innerText;//IE-only fallback
+}
+/**
+ * Set the itemValue of an Element.
+ * http://www.w3.org/TR/html5/microdata.html#values
+ *
+ * @param {Node} element The element to extract the itemValue for.
+ * @param {string} value The itemValue of the element.
+ */
+MicrodataJS["setItemValue"] = function(element, value) {
+	var elementName = element.nodeName,
+		attrTo = "innerHTML";
+
+	if(elementName === 'META')
+		attrTo = "content";
+	else if(['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName) !== -1)
+		attrTo = "src";
+	else if(['A', 'AREA', 'LINK'].indexOf(elementName) !== -1)
+		attrTo = "href";
+	else if(elementName === 'OBJECT')
+		attrTo = "data";
+	else if (elementName === 'TIME' && element.getAttribute('datetime'))
+		attrTo = "dateTime";//TODO:: Check IE[7,6]
+	
+	//Если в шаблоне не указано откуда брать данные - проверяем текстовые ноды
+	element[attrTo] = value;
+}
+
+;(!document["getItems"] ? (
 // 1. Microdata unsupported
 /**
  * @param {Window|Object} global The global object
@@ -32,35 +86,7 @@
  */
 function(global, $$, _toArray) {
 	//Import
-	var MicrodataJS = global["MicrodataJS"] = {},
-		/**
-		 * Returns the itemValue of an Element.
-		 * http://www.w3.org/TR/html5/microdata.html#values
-		 * or http://dev.w3.org/html5/md/#dom-itemvalue
-		 *
-		 * @param {Element} element The element to extract the itemValue for.
-		 * @return {string|Node} The itemValue of the element.
-		 */
-		getItemValue = MicrodataJS["getItemValue"] = function(element) {
-			var elementName = element.nodeName;
-
-			if(element.getAttribute("itemscope") !== null)//hasAttribute("itemscope")
-				return element;
-			else if(elementName === 'META')
-				return element.content;
-			else if(~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName))
-				return element.src;
-			else if(~['A', 'AREA', 'LINK'].indexOf(elementName))
-				return element.href;
-			else if(elementName === 'OBJECT')
-				return element.data;
-			else if (elementName === 'TIME' && element.getAttribute('datetime'))
-				return element.dateTime;//TODO:: Check IE[7,6]
-			else
-				return 'textContent' in element ? element.textContent :
-					element.innerText;//IE-only fallback
-		},
-		fixItemElement = MicrodataJS["fixItemElement"] = function(_element) {
+	var fixItemElement = MicrodataJS["fixItemElement"] = function(_element) {
 			var val;
 			_element['itemScope'] = true;
 
@@ -361,15 +387,31 @@ function(global, $$, _toArray) {
 		
 		return matches;
 	}
+	
+	if(DocumentFragment && DocumentFragment.prototype) {
+		DocumentFragment.prototype["getItems"] = document["getItems"];
+	}
+	else {//IE < 8
+		var msie_CreateDocumentFragment = function() {
+			var df = msie_CreateDocumentFragment.orig.call(d);
+			df["getItems"] = document["getItems"];
+			return df;
+		}
+		msie_CreateDocumentFragment.orig = document.createDocumentFragment;
+		
+		document.createDocumentFragment = msie_CreateDocumentFragment;
+	}
 })
 : (
 // 2. Microdata supported
 	function fixPrototypes(global) {
 		if(fixPrototypes.isfixed)return;
 
-		MicrodataJS = {
-			"fixItemElement" : function(val) { return val }
-		};
+		if(DocumentFragment && DocumentFragment.prototype) {
+			DocumentFragment.prototype["getItems"] = document["getItems"];
+		}
+		
+		MicrodataJS["fixItemElement"] = function(val) { return val }
 		
 		//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
 		//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
