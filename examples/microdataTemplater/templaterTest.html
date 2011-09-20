@@ -10,6 +10,7 @@
 <![endif]-->
 <script src=a.js></script><!-- Only for $$ and toArray functions -->
 <script src=../../microdata-js.js></script>
+<!--script src=../../__SRC/microdata-js.js></script-->
 <script src=microdataTemplater.js></script>
 <script>
 window.onload = function() {
@@ -22,7 +23,7 @@ window.onload = function() {
 		messages : [
 			{
 				from : {
-					id : "",
+					id : 42134,
 					name : "Yusupov Andry",
 					nick : "sidor"
 				},
@@ -30,7 +31,7 @@ window.onload = function() {
 			},
 			{
 				from : {
-					id : "",
+					id : 325,
 					name : "Yusupov Andry",
 					nick : "sidor"
 				},
@@ -38,7 +39,7 @@ window.onload = function() {
 			},
 			{
 				from : {
-					id : "",
+					id : 512351,
 					name : "Vasa Shtovich",
 					nick : "vazelin"
 				},
@@ -46,7 +47,7 @@ window.onload = function() {
 			},
 			{
 				from : {
-					id : "",
+					id : 51234151,
 					name : "Chpreha Ugorgy",
 					nick : "sochfgy"
 				},
@@ -54,7 +55,7 @@ window.onload = function() {
 			},
 			{
 				from : {
-					id : "",
+					id : 95679,
 					name : "Tyhon Gurgen",
 					nick : "gora"
 				},
@@ -63,13 +64,15 @@ window.onload = function() {
 		]
 	}
 	
+	global.microdataTemplate.init();
+	
 	var /** @type {Node} */
 		chatTemplate = document.getItems("template:chat"),
 		curData = data;
 	
 	if(chatTemplate)
 		$A(chatTemplate).forEach(function(itt) {
-			microdataItem_to_template(itt, curData);
+			global.microdataTemplate.setItem(itt, curData);
 		});
 }
 </script>
