@@ -7,8 +7,9 @@
 // ==/ClosureCompiler==
 /**
  * module
- * @version 2.6.5
- *  changeLog: 2.6.5 [15.09.2011 02:43] Доюавил эмуляцию document.readyState для браузеров, в которых нету document.readyState
+ * @version 2.7
+ *  changeLog: 2.7   [21.09.2011 03:55] Major bug fix in Array.prototype.forEach (add var for local variable i)
+			   2.6.5 [15.09.2011 02:43] Доюавил эмуляцию document.readyState для браузеров, в которых нету document.readyState
  			   2.6.4 [03.08.2011 02:40] Добавил много TODO в комментарии, заменил browser.msieV на browser.msie
 			   2.6.3 [13.07.2011 02:27] Переписал Определение браузера. Добавил определение ipad, ipod, iphone. Изменения в функциях
 			   2.6.2 [21.06.2011 16:30] [Bug*]Не объявлялась глобальная переменная global в "strict mode"
@@ -20,6 +21,7 @@
 			   2.4   [07.05.2011 ##:##] Исправил баги $$ и $$N
  **/
 
+// --------------- ================ Global variable ================ ---------------
 /** Переопределяем глобальную переменную для модулей
  * @const */
 window.global = window;
@@ -45,6 +47,8 @@ var IS_DEBUG = true;
 /** @const */
 var DEBUG = IS_DEBUG && !!window.console;
 
+
+// --------------- ================ Browser detection ================ ---------------
 //Определение браузера.
 //Код: https://gist.github.com/989440
 //Разъяснение: http://habrahabr.ru/blogs/javascript/115841/
@@ -140,6 +144,8 @@ browser.isPlaceholder = typeof document.createElement("INPUT").placeholder != un
 if(!document.readyState)browser.noDocumentReadyState = true;
 if(browser.noDocumentReadyState)document.readyState = "uninitialized";
 
+// --------------- ================ es5 shim ================ ---------------
+
 
 /*  =======================================================================================  */
 /*  =================================  Object prototype  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
@@ -178,6 +184,194 @@ if(!Object.create)Object.create = function(proto/*, propertiesObject*/) {
 	return new F();
 };
 
+/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Object prototype  ==================================  */
+/*  =======================================================================================  */
+
+/*  ======================================================================================  */
+/*  ==================================  Function prototype  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
+
+/**
+ * From prototypejs (prototypejs.org)
+ * Создаёт функцию с определёнными объектом this и параметрами вызова
+ * ENG: Wraps the function in another, locking its execution scope to an object specified by thisObj.
+ * @param {Object} object
+ * @param {...} var_args
+ * @return {Function}
+ * @version 2
+ */
+if(!Function.prototype["bind"])Function.prototype["bind"] = Function.prototype.bind = function(object) {
+	var __method = this, args = Array.prototype.slice.call(arguments, 1);
+	return function() {
+		return __method.apply(object, args.concat(Array.prototype.slice.call(arguments, 0)));
+	}
+}
+/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Function prototype  ==================================  */
+/*  =======================================================================================  */
+
+/*  ======================================================================================  */
+/*  ==================================  Array.prototype  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
+
+/*
+From https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/filter
+*/
+Array.prototype.filter = Array.prototype['filter'] || function(fun, thisp) {  
+	var len = this.length >>> 0;
+	if (typeof fun != "function")throw new TypeError();  
+
+	var res = [];
+	for (var i = 0; i < len; i++)
+		if (i in this) {  
+			var val = this[i];// in case fun mutates this  
+			if(fun.call(thisp, val, i, this))res.push(val);
+		}
+
+	return res;
+}
+
+//----- Добавляем в массив функциональность выполнения функции для всех элементов массива
+/*[*]*/
+//Убрал: 1.прерывание выполнения если iterator.call возв. false, т.к. это не соотв. стандартному поведению
+//		 2.return this, т.к. это не соотв. стандартному поведению
+if(!Array.prototype.forEach)Array.prototype.forEach = function(iterator, context) {
+	for(var i in this)if(this.hasOwnProperty(i))iterator.call(context, this[i], parseInt(i, 10), this);
+	//Варианты:
+	//	var v, i = -1;while(v = this[++i])iterator.call(context, v, i, this);
+	// не подходит, т.к. не обрабатывают массив типа t = []; t[0]="0"; t[2]="2"; <- т.к. элемента
+	//  с индексом 1 нету, на индексе 0 первый алгоритм остановится, а второй обработает t[1]
+	//	for(var i = 0, l = this.length ; i < l; i++)iterator.call(context, this[i], i, this);
+	// не подходит, т.к. будет вызван для undefine элементов, в этом случае t = []; t[0]="0"; t[2]="2"; <- элемента 1 == undefine
+}
+
+if(!Array.prototype.indexOf)Array.prototype.indexOf = function(obj, n) {
+	for(var i = n || 0, l = this.length ; i < l ; i++)
+		if(this[i] === obj)return i;
+	return -1;
+}
+if(!Array.prototype.lastIndexOf)Array.prototype.lastIndexOf = function(obj, i) {
+	return this.slice(0).reverse().indexOf(obj, i)
+}
+
+/**
+ * Проверяет, чтобы каждый элемент массива соответствовал некоторому критерию [JavaScript 1.6]
+ * @this {Object}
+ * @param {Function} callback критерий соответствия. По-умочанию - что элемент существует
+ * @param {Object=} opt_thisobj Контент в рамках которого мы будем вызывать функцию
+ * @return {boolean}
+ */
+if(!Array.prototype.every)Array.prototype.every = function(callback, opt_thisobj, _isAll) {
+	if(_isAll === void 0)_isAll = true;//Default value = true
+	var result = _isAll;
+	this.forEach(function(value, index) {
+		if(result == _isAll)result = !!callback.call(opt_thisobj, value, index, this);
+	});
+	return result;
+}
+
+/**
+ * Проверяет, чтобы хотябы один элемент массива соответствовал некоторому критерию [JavaScript 1.6]
+ * @this {Object}
+ * @param {Function} callback критерий соответствия. По-умочанию - что элемент существует
+ * @param {Object=} opt_thisobj Контент в рамках которого мы будем вызывать функцию
+ * @return {boolean}
+ */
+if(!Array.prototype.some)Array.prototype.some = function(callback, opt_thisobj) {
+	return this.every(callback, opt_thisobj, false);
+}
+
+/**
+ * 
+ * EN: Creates a new array with the results of calling a provided function on every element in this array.
+ * Production steps of ECMA-262, Edition 5, 15.4.4.19  
+ * Reference: http://es5.github.com/#x15.4.4.19
+ * @param {Function} callback Function that produces an element of the new Array from an element of the current one.
+ * @param {Object?} thisArg Object to use as this when executing callback.
+ * @return {Array}
+ */
+if (!Array.prototype.map)Array.prototype.map = function(callback, thisArg) {
+    var T, Result, k;
+
+    if(this == null)throw new TypeError(" this is null or not defined");  
+
+	var O = Object(this),// 1. Let O be the result of calling ToObject passing the |this| value as the argument.  
+		len = O.length >>> 0;// 2. Let lenValue be the result of calling the Get internal method of O with the argument "length".  
+							 // 3. Let len be ToUint32(lenValue).  
+
+	// 4. If IsCallable(callback) is false, throw a TypeError exception.  
+	// See: http://es5.github.com/#x9.11  
+	if ({}.toString.call(callback) != "[object Function]")
+		throw new TypeError(callback + " is not a function"); 
+
+	if(thisArg)T = thisArg;// 5. If thisArg was supplied, let T be thisArg; else let T be undefined.  
+
+	// 6. Let Result be a new array created as if by the expression new Array(len) where Array is  
+	// the standard built-in constructor with that name and len is the value of len.  
+	Result = new Array(len);  
+
+	k = 0;// 7. Let k be 0  
+
+	while(k < len) {// 8. Repeat, while k < len
+		var kValue, mappedValue;  
+
+		// a. Let Pk be ToString(k).  
+		//   This is implicit for LHS operands of the in operator  
+		// b. Let kPresent be the result of calling the HasProperty internal method of O with argument Pk.  
+		//   This step can be combined with c  
+		// c. If kPresent is true, then  
+		if (k in O) { 
+			kValue = O[ k ];// i. Let kValue be the result of calling the Get internal method of O with argument Pk.    
+
+			// ii. Let mappedValue be the result of calling the Call internal method of callback  
+			// with T as the this value and argument list containing kValue, k, and O.  
+			mappedValue = callback.call(T, kValue, k, O);  
+
+			// iii. Call the DefineOwnProperty internal method of Result with arguments  
+			// Pk, Property Descriptor {Value: mappedValue, Writable: true, Enumerable: true, Configurable: true},  
+			// and false.  
+
+			// In browsers that support Object.defineProperty, use the following:  
+			// Object.defineProperty(Result, Pk, { value: mappedValue, writable: true, enumerable: true, configurable: true });  
+
+			// For best browser support, use the following:  
+			Result[k] = mappedValue;  
+		}
+		// d. Increase k by 1.  
+		k++;  
+	}  
+
+	return Result;// 9. return Result
+};
+
+/**
+ * Проверка, является ли объект массивом
+ * EN: Is a given value an array?
+ * Delegates to ECMA5's native Array.isArray
+ * @param {*} Проверяемый объект 
+ * @return {boolean}
+ */
+Array.isArray = Array['isArray'] || function(obj) {
+	return !!(obj && obj.concat && obj.unshift && !obj.callee);
+};
+
+/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Array.prototype  ==================================  */
+/*  ======================================================================================  */
+
+/*  ======================================================================================  */
+/*  ================================  String.prototype  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
+
+if(!String.prototype.trim)String.prototype.trim = function() {
+	var	str = this.replace(/^\s\s*/, ''),
+		ws = /\s/,
+		i = str.length;
+	while(ws.test(str.charAt(--i))){};
+	return str.slice(0, i + 1);
+}
+
+/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  String.prototype  ==================================  */
+/*  ======================================================================================  */
+
+
+/*  =======================================================================================  */
+/*  ======================================  Classes  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
 
 Object.append = function(object) {
 	for(var i = 1; i < arguments.length; i++) {
@@ -189,12 +383,6 @@ Object.append = function(object) {
 	return object;
 }
 
-/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Object prototype  ==================================  */
-/*  =======================================================================================  */
-
-/*  =======================================================================================  */
-/*  ======================================  Classes  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
-
 /**
  * Наследует класс Child от Parent - фактически, только добавляет prototype Parent в цепочку прототипов Child. Не выполняет инициализирующий код содержащийся в конструкторе Parent, поэтому в конструкторе Child нужно дополнительно вызвать Child.superclass.constructor.call(this, ...)
  * @param {Function} Child
@@ -203,6 +391,22 @@ Object.append = function(object) {
 function extend(Child, Parent) {
 	(Child.prototype = Object.create(Child.superclass = Parent.prototype)).constructor = Child;
 }
+/*
+	Quick way to define prototypes; much less verbose than standard 
+	foobar.prototype.someFunc = function() lists. See ApplicationCache
+	defined below for example use.
+
+	@param f Function object/constructor to add to.
+	@param addMe Object literal that contains the properties/methods to
+		add to f's prototype.
+	TODO:: jsdoc's и описать
+*/
+function append(f, addMe) {
+	for (var i in addMe) {
+		f.prototype[i] = addMe[i];
+	}
+}
+
 
 /*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Classes  ======================================  */
 /*  =======================================================================================  */
@@ -367,7 +571,8 @@ SendRequest.optionsType;
  * @param {Function=} _onLoad Callback вызываемый при загрузки одного пути
  * @param {Function=} _onError CAllback вызываемый при возникновении ошибки во время загрузки пути или при прерывании по таймауту. При прерывании по таймауту, в функцию передаётся false первым параметром
  * @param {Object=} options Опции: {DOMElement - DOM-элемент ассоциируемый с загружаемым контентом; timeoutDelay - время в мс, сколько ждём загрузки каждого пути; attemptCount - кол-во попыток для каждого пути, если загрузка пути была прервана по timeOut; TODO::allowAsynh - собирает неудачные загрузки в очередь и загружает следующий путь, после того, как попробует загрузить все пути, возвращяется к неудачным и пробует attemptCount - 1 раз их загрузить; TODO:: parallel - паралельная загрузка нескольких путей сразу}
- * @version 2.1
+ * @version 2.4
+ *  changeLog:: 2.4. [19.09.2011 00:25] [*bug]Исправлено множество багов
  */
 function loader(_urls, _allDone, _onLoad, _onError, options) {
 /* DEFAULT VALUES */
@@ -514,9 +719,10 @@ var t = new imageLoader(["http://ie.microsoft.com/testdrive/HTML5/DOMContentLoad
 						function(){	alert("allDone")},
 						function(imgSrc, index, succ, msg){resources.innerHTML += '<img src="' + imgSrc + '">'})
 t.start();
- * @version 2.1
  * @constructor
  * @extends {loader}
+ * @version 2.4
+ *  changeLog:: 2.4. [19.09.2011 00:25] [*bug]Исправлено множество багов
  */
 function imageLoader(url, _allDone, _onLoad, _onError, options) {
 /* DEFAULT VALUES */
@@ -529,9 +735,12 @@ function imageLoader(url, _allDone, _onLoad, _onError, options) {
 	imageLoader.superclass.constructor.apply(thisObj, arguments);
 
 /* PRIVATE */	
-	var _img = new Image();
+	var _img;
 	
 	thisObj.load = function(url, index) {
+		if(_img)_img.onload = _img.onerror = _img = null;
+		_img = new Image();//Каждый раз создаём новый объект Image, чтобы предотвратить появление багов с onload в IE (onload не переназначается)
+		
 		if(!_img.onload)_img.onload = thisObj.done.bind(thisObj, url, index, true, url);
 		if(!_img.onerror)_img.onerror = thisObj.error.bind(thisObj, url, index, false, url);
 	
@@ -545,7 +754,14 @@ function imageLoader(url, _allDone, _onLoad, _onError, options) {
 		//Если события не очистить, то может быть ложное/повторное срабатывание onerror или onload
 		//Если thisObj._img.src установить "", то, например, в Chrome это будет расцениватся не как обнуление, а
 		// как установка пути в location.href
-		_img.onload = _img.onerror = _img.src = null;
+		_img.onload = _img.onerror = null;
+	
+		//Для IE: Удаляем объект Image, но сохраняем состояние _img.complete, т.к. эта функция может выполнится перед return _img.complete в thisObj.load
+		_img = {"complete" : _img.complete};
+		
+		//IE bug fix
+		/*if(_img.detachEvent)
+			elt.detachEvent("onload", listener);*/
 	}
 }
 extend(imageLoader, loader);
@@ -559,7 +775,7 @@ extend(imageLoader, loader);
 
 /**
 	@namespace Класс для работы с событиями
-	02.08.11    ver.2.2.1 Добавил экспортируемые функции Events.addEventListener и Events.removeEventListener
+	02.08.12    ver.2.2.1 Добавил экспортируемые функции Events.addEventListener и Events.removeEventListener
 	19.01.11	ver.2.2.0.1 (!)Исправил небольшой баг в Opera в fixEvent, связаный с вычислением event.relatedTarget
 	15.11.10	ver.2.2.0::Важное: выключил возможность игнорировать событие по guid, т.к. неюзабельно
 	30.09.10	ver.2.1.3
@@ -567,7 +783,7 @@ extend(imageLoader, loader);
 		   при переписывании можно использовать наработки https://github.com/kbjr/Events.js
 	Event -> Events
 */
-var Events = (function() {
+var Events= (function() {
 	var guid = 0;// текущий номер обработчика
 
 	// кросс-браузерная предобработка объекта-события
@@ -897,223 +1113,6 @@ Events.userAdd["DOMReady"] = function(el, type, _handler) {
 /*  ======================================================================================  */
 
 
-/*  ======================================================================================  */
-/*  ==================================  Array.prototype  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
-
-/*
-From https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/filter
-*/
-Array.prototype.filter = Array.prototype['filter'] || function(fun, thisp) {  
-	var len = this.length >>> 0;
-	if (typeof fun != "function")throw new TypeError();  
-
-	var res = [];
-	for (var i = 0; i < len; i++)
-		if (i in this) {  
-			var val = this[i];// in case fun mutates this  
-			if(fun.call(thisp, val, i, this))res.push(val);
-		}
-
-	return res;
-}
-
-//----- Добавляем в массив функциональность выполнения функции для всех элементов массива
-/*[*]*/
-//Убрал: 1.прерывание выполнения если iterator.call возв. false, т.к. это не соотв. стандартному поведению
-//		 2.return this, т.к. это не соотв. стандартному поведению
-if(!Array.prototype.forEach)Array.prototype.forEach = function(iterator, context) {
-	for(i in this)if(this.hasOwnProperty(i))iterator.call(context, this[i], parseInt(i, 10), this);
-	//Варианты:
-	//	var v, i = -1;while(v = this[++i])iterator.call(context, v, i, this);
-	// не подходит, т.к. не обрабатывают массив типа t = []; t[0]="0"; t[2]="2"; <- т.к. элемента
-	//  с индексом 1 нету, на индексе 0 первый алгоритм остановится, а второй обработает t[1]
-	//	for(var i = 0, l = this.length ; i < l; i++)iterator.call(context, this[i], i, this);
-	// не подходит, т.к. будет вызван для undefine элементов, в этом случае t = []; t[0]="0"; t[2]="2"; <- элемента 1 == undefine
-}
-
-/**
- * Объединяет массив с другим массивом, пропуская повторяющиеся и undefined значения.
- * @version 4
- * @param {Array} list Добавляемый массив
- * @param {Function=} callback Функция для проверки добавляемого значения со всеми значениями исходного массива. Должна вернуть true, для того, чтобы элемент добавился
- */
-Array.prototype.union = function(list, callback) {
-	callback = callback || function(a, b) { return a != b }
-	var result = this, newValue, value, isUnique, rl = result.length;
-    
-    for(var i = -1, ll = list.length ; newValue = list[++i], i < ll ; )if(newValue !== void 0) {
-		isUnique = true;
-		for(var j = -1 ; value = result[++j], j < rl && isUnique ; )isUnique = callback(value, newValue);
-		if(isUnique)result.push(newValue);
-	}
-	
-	return result;
-}
-
-/**
- * Добавляем все значения массива list в конец текущего массива this
- * @version 2
- * @param {Array} list Добавляемый массив
- */
-Array.prototype.unionAll = function(list) {
-	this.splice.apply(this, [this.length, 0].concat(list));
-	return this;
-}
-
-if(!Array.prototype.indexOf)Array.prototype.indexOf = function(obj, n) {
-	for(var i = n || 0, l = this.length ; i < l ; i++)
-		if(this[i] === obj)return i;
-	return -1;
-}
-if(!Array.prototype.lastIndexOf)Array.prototype.lastIndexOf = function(obj, i) {
-	return this.slice(0).reverse().indexOf(obj, i)
-}
-
-/*/*
- * /БАГИ!/ЗАМЕНЕНА НА every(JavaScript 1.6)/Проверяет, чтобы каждый элемент массива соответствовал некоторому критерию
- * @deprecate
- * @param {Function} iterator критерий соответствия. По-умочанию - что элемент существует
- * @param {Object=} context Контент в рамках которого мы будем вызывать функцию 
- * @param {boolean=} noneed
- * @return {boolean}
- */
-/*if(!Array.prototype.all)Array.prototype.all = function(iterator, context, noneed) {
-	iterator = iterator || function(x){return x};
-	var result = typeof noneed == undefType || noneed;//Default value = true
-	this.forEach(function(value, index) {
-		if(result == noneed)result = !!iterator.call(context, value, index);
-	});
-	return result;
-}*/
-
-/*/*
- * /БАГИ!//ЗАМЕНЕНА НА some(JavaScript 1.6)/Проверяет, чтобы хотябы один элемент массива соответствовал некоторому критерию
- * @deprecate
- * @param {Function} iterator критерий соответствия. По-умочанию - что элемент существует
- * @param {Object=} context Контент в рамках которого мы будем вызывать функцию
- * @return {boolean}
- */
-/*if(!Array.prototype.any)Array.prototype.any = function(iterator, context) {
-	return Array.prototype.all(iterator, context, false);//<-Ошибка
-}*/
-
-/**
- * Проверяет, чтобы каждый элемент массива соответствовал некоторому критерию [JavaScript 1.6]
- * @this {Object}
- * @param {Function} callback критерий соответствия. По-умочанию - что элемент существует
- * @param {Object=} opt_thisobj Контент в рамках которого мы будем вызывать функцию
- * @return {boolean}
- */
-if(!Array.prototype.every)Array.prototype.every = function(callback, opt_thisobj, _isAll) {
-	if(_isAll === void 0)_isAll = true;//Default value = true
-	var result = _isAll;
-	this.forEach(function(value, index) {
-		if(result == _isAll)result = !!callback.call(opt_thisobj, value, index, this);
-	});
-	return result;
-}
-
-/**
- * Проверяет, чтобы хотябы один элемент массива соответствовал некоторому критерию [JavaScript 1.6]
- * @this {Object}
- * @param {Function} callback критерий соответствия. По-умочанию - что элемент существует
- * @param {Object=} opt_thisobj Контент в рамках которого мы будем вызывать функцию
- * @return {boolean}
- */
-if(!Array.prototype.some)Array.prototype.some = function(callback, opt_thisobj) {
-	return this.every(callback, opt_thisobj, false);
-}
-
-/**
- * 
- * EN: Creates a new array with the results of calling a provided function on every element in this array.
- * Production steps of ECMA-262, Edition 5, 15.4.4.19  
- * Reference: http://es5.github.com/#x15.4.4.19
- * @param {Function} callback Function that produces an element of the new Array from an element of the current one.
- * @param {Object?} thisArg Object to use as this when executing callback.
- * @return {Array}
- */
-if (!Array.prototype.map)Array.prototype.map = function(callback, thisArg) {
-    var T, Result, k;
-
-    if(this == null)throw new TypeError(" this is null or not defined");  
-
-	var O = Object(this),// 1. Let O be the result of calling ToObject passing the |this| value as the argument.  
-		len = O.length >>> 0;// 2. Let lenValue be the result of calling the Get internal method of O with the argument "length".  
-							 // 3. Let len be ToUint32(lenValue).  
-
-	// 4. If IsCallable(callback) is false, throw a TypeError exception.  
-	// See: http://es5.github.com/#x9.11  
-	if ({}.toString.call(callback) != "[object Function]")
-		throw new TypeError(callback + " is not a function"); 
-
-	if(thisArg)T = thisArg;// 5. If thisArg was supplied, let T be thisArg; else let T be undefined.  
-
-	// 6. Let Result be a new array created as if by the expression new Array(len) where Array is  
-	// the standard built-in constructor with that name and len is the value of len.  
-	Result = new Array(len);  
-
-	k = 0;// 7. Let k be 0  
-
-	while(k < len) {// 8. Repeat, while k < len
-		var kValue, mappedValue;  
-
-		// a. Let Pk be ToString(k).  
-		//   This is implicit for LHS operands of the in operator  
-		// b. Let kPresent be the result of calling the HasProperty internal method of O with argument Pk.  
-		//   This step can be combined with c  
-		// c. If kPresent is true, then  
-		if (k in O) { 
-			kValue = O[ k ];// i. Let kValue be the result of calling the Get internal method of O with argument Pk.    
-
-			// ii. Let mappedValue be the result of calling the Call internal method of callback  
-			// with T as the this value and argument list containing kValue, k, and O.  
-			mappedValue = callback.call(T, kValue, k, O);  
-
-			// iii. Call the DefineOwnProperty internal method of Result with arguments  
-			// Pk, Property Descriptor {Value: mappedValue, Writable: true, Enumerable: true, Configurable: true},  
-			// and false.  
-
-			// In browsers that support Object.defineProperty, use the following:  
-			// Object.defineProperty(Result, Pk, { value: mappedValue, writable: true, enumerable: true, configurable: true });  
-
-			// For best browser support, use the following:  
-			Result[k] = mappedValue;  
-		}
-		// d. Increase k by 1.  
-		k++;  
-	}  
-
-	return Result;// 9. return Result
-};
-
-/**
- * Проверка, является ли объект массивом
- * EN: Is a given value an array?
- * Delegates to ECMA5's native Array.isArray
- * @param {*} Проверяемый объект 
- * @return {boolean}
- */
-Array.isArray = Array['isArray'] || function(obj) {
-	return !!(obj && obj.concat && obj.unshift && !obj.callee);
-};
-
-/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Array.prototype  ==================================  */
-/*  ======================================================================================  */
-
-/*  ======================================================================================  */
-/*  ================================  String.prototype  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
-
-if(!String.prototype.trim)String.prototype.trim = function() {
-	var	str = this.replace(/^\s\s*/, ''),
-		ws = /\s/,
-		i = str.length;
-	while(ws.test(str.charAt(--i))){};
-	return str.slice(0, i + 1);
-}
-
-/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  String.prototype  ==================================  */
-/*  ======================================================================================  */
 
 /*  ======================================================================================  */
 /*  =======================================  Utils  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
@@ -1244,12 +1243,6 @@ function randomString(length) {
 }
 */
 
-/** Переименовал в getStyleDiff
- * @deprecate
- */
-function StyleStringDiff() {
-
-}
 /**
  * Находит разность между двумя css-строками и возвращяет её в виде объекта.
  * Каждое свойство обекта - массив в 0-м элмента значение из oldStyleStr, в 1-м изnewStyleStr.
@@ -1421,23 +1414,6 @@ function $K(iterable, forse) {
 	return results;
 }
 
-/**
- * From prototypejs (prototypejs.org)
- * Создаёт функцию с определёнными объектом this и параметрами вызова
- * ENG: Wraps the function in another, locking its execution scope to an object specified by thisObj.
- * @param {Object} object
- * @param {...} var_args
- * @return {Function}
- * @version 2
- */
-if(!Function.prototype["bind"])Function.prototype["bind"] = Function.prototype.bind = function(object) {
-	var __method = this, args = Array.prototype.slice.call(arguments, 1);
-	return function() {
-		return __method.apply(object, args.concat(Array.prototype.slice.call(arguments, 0)));
-	}
-}
-
-
 /* JSON JavaScript implementation */
 /* Реализуем минимальную функциональность JSON */
 if(typeof JSON == undefType)JSON = {
@@ -1446,6 +1422,7 @@ if(typeof JSON == undefType)JSON = {
 			eval('(' + text + ')') || null;
 	}
 }
+
 
 /**
  * Функция динамически подгружает flash-ролик, беря данные для ролика из elements
@@ -1552,46 +1529,13 @@ function urlLit(string, mode) {
 	var alphabet = 'a b v g d e ["zh","j"] z i y k l m n o p r s t u f h c ch sh ["shh","shch"] ~ y ~ e yu ya ~ ["jo","e"]'.split(' '),
 		result = '', code, ch;
 	string = string.toLowerCase().replace(/ /g,'-');
-	for(i = 0, l = string.length ; i < l ; ++i) { 
+	for(var i = 0, l = string.length ; i < l ; ++i) { 
 		code = string.charCodeAt(i);
 		ch = (code >= 1072 ? alphabet[code - 1072] : string[i]); 
 		if(ch.length < 3)result += ch;
 		else result += eval(ch)[mode];//TODO: Подумать как тут можно избавится от eval
 	}
 	return(result.replace(/~/g,''));
-}
-
-
-/**
- * Запускает функцию в отдельном контексте. Вызов происходит синхронно
- * /EN: creates a wrapper for function that allows you to not be afraid of exceptions in
- * Источник: @link {http://javascript.ru/forum/48731-post38.html}
- * Usage:
-	var inverse= FThread(function( a ){
-		if( a === -1 ) (void 0)()
-		if( a === 0 ) throw Error( 'division by zero' )
-		return 1/a
-	})
-	alert([ inverse( -1 ), inverse( 0 ), inverse( 1 ) ])
-	// alerts ",,1" and two exceptions in console log
- * @param {Function} proc Функция, которую нужно выполнить в отдельном контексте
- * @return {Function} функция-обёртка для вызова
- */
-var FThread = function(proc) {
-    var thread = function() {
-        var res, thisObj = this, args = arguments,
-			starter = new XMLHttpRequest;
-        starter.onreadystatechange = starter.onabort = function(ev) {
-        	starter.onreadystatechange = starter.onabort = null;
-		    res = thread.proc.apply(thisObj, args);
-		}
-        starter.open('get', '#', true);
-        starter.send(null);
-        starter.abort();
-        return res;
-    }
-    thread.proc = proc;
-    return thread;
 }
 
 /**
@@ -1669,40 +1613,6 @@ function bubbleEventListener(attribute, namedFunctions, context, allowMany) {
 /*  ======================================================================================  */
 
 /*  ======================================================================================  */
-/*  =====================================  Math Utils  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
-/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!! TODO:: Добавить всю секцию в mixolog.ru */
-
-/**
- * Разуплотняет матрицу заполняя соседние клетки значениями в текущей клетке
- * @param {Array.<Array.<*>>} M Матрица
- * @param {number} unpackX  Кол-во заполяемых клеотк по горизонтали
- * @param {number} unpackY  Кол-во заполяемых клеотк по вертикали
- */
-function unpackMatrix(M, unpackX, unpackY) {
-	unpackX = unpackX + 1 || 1;
-	unpackY = unpackY + 1 || 1;
-	var i = -1, k, M1, M2, newM = [], g0, g1, g2;
-	while(M1 = M[++i]) {
-		k = -1;
-		//newM[i] = [];
-		while(M2 = M1[++k]) {
-			g0 = i * unpackX;
-			for(var h1 = 0 ; h1 < unpackX ; h1++) {
-				g1 = g0 + h1;
-				g2 = k * unpackY;
-				for(var h2 = 0 ; h2 < unpackY ; h2++) {
-					if(!newM[g1])newM[g1] = [];
-					newM[g1][g2 + h2] = M2;
-				}
-			}
-		}
-	}
-	return newM;
-}
-
-/*  ======================================================================================  */
-/*  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>  Math Utils  =====================================  */
-
 
 /*  ======================================================================================  */
 /*  ========================================  DOM  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<  */
@@ -1766,7 +1676,7 @@ function $$N(selector, roots, isFirst) {
 		/** @type {number} */ir = -1,
 		/** @type {number} */kr;
 	
-	if(d.querySelector && !$$N.nonStandartPseudoClasses.regExp.test(selector)) {
+	if(typeof document.querySelector == "function" && !$$N.nonStandartPseudoClasses.regExp.test(selector)) {
 		var /** @type {boolean} */isSpecialMod,
 			/** @type {boolean} */noway = false,
 			/** @type {string} */specialSelector;
@@ -1781,7 +1691,7 @@ function $$N(selector, roots, isFirst) {
 		
 		while(rt = roots[++ir]) {
 			if(isSpecialMod) {
-				if(rt == d)noway = true;//[MARK#1]У document нету parentNode, поэтому мы не можем выполнить на нём querySelector
+				if(rt == document)noway = true;//[MARK#1]У document нету parentNode, поэтому мы не можем выполнить на нём querySelector
 				else {
 					if(!rt.id)rt.id = $$N.str_for_id + $$N.uid_for_id++;
 					specialSelector = "#" + rt.id + selector;
@@ -1868,6 +1778,7 @@ function $$N(selector, roots, isFirst) {
 					match = ~rsClName.indexOf(classes[k]);
 			}
 			if(match && css3Attr) {
+				//TODO:: [attrName1][attrName2]
 				if(typeof css3Attr == 'string') {//Check, if we not analys css3Attr yet
 					css3Attr = css3Attr.match(/^\[(.*?)(?:([\*~&\^\$\|!]?=)(.*?))?\]$/);
 					if(css3Attr[1] == "class" && document.all)css3Attr[1] = "className";//IE
@@ -2248,7 +2159,10 @@ function html5_document(doc) { // pass in a document as an argument
 //Исправляем для IE<9 создание DocumentFragment, для того, чтобы функция работала с HTML5
 if(browser.msie < 9) {
 	var msie_CreateDocumentFragment = function() {
-		return html5_document(msie_CreateDocumentFragment.orig.call(d));
+		var df = msie_CreateDocumentFragment.orig.call(d);
+		if(!df.querySelector)df.querySelector = function(sel){return $$0(sel, this);};//TODO:: tests
+		if(!df.querySelectorAll)df.querySelectorAll = function(sel){return $$(sel, this);};
+		return html5_document(df);
 	}
 	msie_CreateDocumentFragment.orig = d.createDocumentFragment;
 	
@@ -2617,7 +2531,7 @@ var Site = {
 	afterPageLoad : function() {
 		if(browser.noDocumentReadyState)document.readyState = "complete";
 		
-		for(i in Site.afterLoads)if(Site.afterLoads.hasOwnProperty(i) && typeof (i = Site.afterLoads[i]) == "function")i();		
+		for(var i in Site.afterLoads)if(Site.afterLoads.hasOwnProperty(i) && typeof (i = Site.afterLoads[i]) == "function")i();		
 	},
 	
 	/**
@@ -2629,7 +2543,7 @@ var Site = {
 		//Добавим к тегу <HTML> класс с названием браузера/движка
 		d.documentElement.className += (" " + browser.names.join(" "));
 		
-		for(i in Site.inits)if(Site.inits.hasOwnProperty(i) && typeof (i = Site.inits[i]) == "function")i();
+		for(var i in Site.inits)if(Site.inits.hasOwnProperty(i) && typeof (i = Site.inits[i]) == "function")i();
 	}
 }
 

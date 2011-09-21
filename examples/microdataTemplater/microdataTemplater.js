@@ -1,7 +1,7 @@
 ﻿// @required(microdata)
 
 //closure
-;(function(global, MicrodataJSLib) {
+;(function(global, ajax) {
 
 /** Темплейтер на основе HTML5 Microdata API
  * @param {Node} microdataItem Корневой DOM-элемент - Microdata Item
@@ -13,9 +13,85 @@ global.microdataTemplate = new function() {
 	var _documentFragment = document.createDocumentFragment();
 
 /* OPTIONS */
-	thisObj.options = thisObj.options || {};
+	//thisObj.options = thisObj.options || {};
 	
 /* PRIVATE | FUNCTIONS */
+	function _isEmptyElement(element) {
+		var isEmpty = !element.firstChild, i = 0;
+		
+		if(!isEmpty) {
+			isEmpty = true;
+			
+			while((el = element.childNodes[i++]) && isEmpty)
+				isEmpty = el.nodeType === 3 && el.nodeValue.trim() === "";
+		}
+		
+		return isEmpty;
+	}
+
+	function _loadElementTeamplate(element, fullSrc, onLoad_callback) {
+		if(!fullSrc)return false;
+		
+		var el, _src = fullSrc.split("#"), _el, i = 0,
+			isUrl = /(((ht|f)tp(s?)\:\/\/){1}\S+)/.test(_src[0]);
+		
+		//for tests
+		_src[0] = _src[0] + "?" + randomString(3);
+		
+		if((!isUrl || _src[0] == location.href.split("#")[0]) && _src[1])
+			_src[0] = _src[1];
+		
+		function _element_ready(el, _callback) {
+			if(el) {
+				element.__templateElement__ = el;
+				
+				while(_el = el.childNodes[i++])
+					element.appendChild(cloneElement(_el));
+			
+				global.MicrodataJS.fixItemElement(element);
+				
+				_callback();
+			}
+		}
+		
+		//Load element teamplate from remote url
+		if(isUrl) {
+			var fn, cch;
+			
+			if(cch = _documentFragment._URL_CACHE[fullSrc])
+				_element_ready(cch, onLoad_callback);
+			
+			//TODO::load element 
+			ajax.send(_src[0], fn = function(xhr) {
+				if(xhr.responseText) {
+					var newEl;
+					
+					if(_documentFragment._URL_CACHE[_src[0]]) {						
+						_documentFragment._URL_CACHE[fullSrc] = _src[1] ? _documentFragment.querySelector("#" + _src[1]) : newEl;
+					}
+					else {
+						newEl = document.createElement("div");
+						
+						_documentFragment.appendChild(newEl);
+						newEl.innerHTML = xhr.responseText;
+						
+						_documentFragment._URL_CACHE[fullSrc] = _src[1] ? _documentFragment.querySelector("#" + _src[1]) : newEl;
+					}
+					
+					_element_ready(_documentFragment._URL_CACHE[fullSrc], onLoad_callback);
+				}
+				else {
+					//TODO:: error load teamplate
+				}
+			}, fn);
+		}		
+		else if(_src[0]) {//local element
+			_element_ready(document.getElementById(_src[0]), onLoad_callback);
+		}
+		
+		return true;
+	}
+	
 	/**
 	 * Set the itemValue of an Element.
 	 * http://www.w3.org/TR/html5/microdata.html#values
@@ -26,7 +102,7 @@ global.microdataTemplate = new function() {
 	 * @param {boolean!} forse Forse reset text nodes
 	 * @return {string} value
 	 */
-	function setItemValue(element, value, itemprop, forse) {
+	function _setItemValue(element, value, itemprop, forse) {
 		var elementName = element.nodeName,
 			attrTo = "innerHTML",
 			attrFrom = attrTo,
@@ -107,7 +183,6 @@ global.microdataTemplate = new function() {
 	}
 
 /* PUBLICK */
-	
 	/** Установим значение одного property
 	 * @param {string} */
 	thisObj.setProperty = function(element, propertyName, data, forse) {
@@ -149,7 +224,7 @@ global.microdataTemplate = new function() {
 				var first = true, el;
 				$A(curProp_value).forEach(function(curVal) {//Принудительно преведём к массиву и пробежимся по нему
 					if(first) {
-						setItemValue(element, curVal, propertyName, forse);
+						_setItemValue(element, curVal, propertyName, forse);
 						
 						first = false;
 						return;
@@ -161,14 +236,22 @@ global.microdataTemplate = new function() {
 						element._lastInsertedNode || element);
 						
 					el.__templateElement__ = element.__templateElement__;
-					setItemValue(el, curVal, propertyName, forse);
+					_setItemValue(el, curVal, propertyName, forse);
 				})
 			}
-			else setItemValue(element, curProp_value, propertyName, forse);
+			else _setItemValue(element, curProp_value, propertyName, forse);
 		}
 	}
 	
 	thisObj.setItem = function(itemElement, data, forse) {
+		var itemid = itemElement.getAttribute("itemid");
+		
+		if(itemid !== null && _isEmptyElement(itemElement)) {
+			var itemid = itemElement.getAttribute("itemid");
+			
+			if(_loadElementTeamplate(itemElement, itemid, thisObj.setItem.bind(thisObj, itemElement, data, forse)))
+			return;
+		}
 		
 		if(Array.isArray(data) || (itemElement.getAttribute("itemprop") || "").substr(-2) === "[]") {
 			var first = true, el;
@@ -216,7 +299,11 @@ global.microdataTemplate = new function() {
 	}
 }
 
-})(window, MicrodataJS);
+})(window, {
+	send : function(url, onload, onerror) {
+		SendRequest(url, "", onload, onerror);
+	}
+});
 
 
 

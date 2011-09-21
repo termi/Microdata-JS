@@ -8,10 +8,10 @@
 <!--[if lt IE 9]>
 <script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
 <![endif]-->
-<script src=a.js></script><!-- Only for $$ and toArray functions -->
-<script src=../../microdata-js.js></script>
+<script src=a.js?1></script><!-- Only for $$ and toArray functions -->
+<script src=../../microdata-js.js?2></script>
 <!--script src=../../__SRC/microdata-js.js></script-->
-<script src=microdataTemplater.js></script>
+<script src=microdataTemplater.js?3></script>
 <script>
 window.onload = function() {
 	var data = {
@@ -80,6 +80,9 @@ window.onload = function() {
 </head>
 
 <body>
+
+
+
 <section itemscope itemtype="template:chat">
 	<header>
 		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>
@@ -95,7 +98,15 @@ window.onload = function() {
 	</ul>
 </section>
 
-<section itemscope itemtype="template:chat">
+Remote teamplate test (put files for you server for word):
+<section itemscope itemtype="template:chat" itemid="http://localhost/Microdata-JS/examples/microdataTemplater/tmpl.txt#testRemoteSection">
+</section>
+
+<p>
+
+</p>
+
+<section itemscope itemtype="template:chat" id="test_ppp">
 	<header>
 		ID:<p itemprop=account.id[]>#account.id#<span>|</span></p>
 		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>

@@ -1,6 +1,7 @@
 Implementation of the HTMl5 Microdata specification.
 
  + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
+ + Extending DocumentFragment.prototype with getItems function
 
 Browsers support:
 Opera, Google Chrome, Safary, FireFox, IE8

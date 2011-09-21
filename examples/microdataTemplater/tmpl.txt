@@ -1,0 +1,10 @@
+﻿<section id="testRemoteSection" itemscope itemtype="template:chat" id="test_ppp"><header itemprop=account.name>
+		This is remote teamplate account name: #account.name# and account nick: (<span style="color:red" itemprop=account.nick></span>)
+	</header>
+	
+	<table>
+		<tr itemprop=messages itemscope itemtype="template:chat/message">
+			<td itemprop=from.name>
+			<td itemprop=from.nick>
+			<td itemprop=body>
+		
