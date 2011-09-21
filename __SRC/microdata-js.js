@@ -16,11 +16,7 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2
- *  changeLog: 2   [15.09.11] refactorign. Add PropertyNodeList and HTMLPropertiesCollection prototypes
- *			   1.3 [11.08.11] [bug*] Fix bug with getAttribute
- * 			   1.2 [11.08.11] replace all hasAttribute to getAttribute for IE7
- *   
+ * @version 2.1.1
  */
 
 MicrodataJS = global["MicrodataJS"] = {};
@@ -87,24 +83,25 @@ MicrodataJS["setItemValue"] = function(element, value) {
 function(global, $$, _toArray) {
 	//Import
 	var fixItemElement = MicrodataJS["fixItemElement"] = function(_element) {
-			var val;
-			_element['itemScope'] = true;
+		var val;
+		_element['itemScope'] = true;
 
-			// Attach the (none-live) properties attribute to the element
-			_element['properties'] = getProperties(_element);
+		// Attach the (none-live) properties attribute to the element
+		_element['properties'] = getProperties(_element);
 
-			if(val = _element.getAttribute("itemid"))//hasAttribute
-				_element['itemId'] = val;
-				
-			if(val = _element.getAttribute("itemref"))//hasAttribute
-				_element['itemRef'] = val;
-
-			if(val = _element.getAttribute("itemtype"))//hasAttribute
-				_element['itemType'] = val;
+		if(val = _element.getAttribute("itemid"))//hasAttribute
+			_element['itemId'] = val;
 			
-			return _element;
-		}
+		if(val = _element.getAttribute("itemref"))//hasAttribute
+			_element['itemRef'] = val;
+
+		if(val = _element.getAttribute("itemtype"))//hasAttribute
+			_element['itemType'] = val;
+		
+		return _element;
+	}
 	
+	if(!global["PropertyNodeList"]) {
 	// --- === PropertyNodeList CLASS [BEGIN] === ---
 	/**
 	 * @constructor
@@ -135,7 +132,6 @@ function(global, $$, _toArray) {
 	PropertyNodeList.prototype["namedItem"] = function(p_name) {
 		//TODO:: Still don't know what code here
 	}
-
 	/**
 	 * @return {Array}
 	 */
@@ -148,11 +144,12 @@ function(global, $$, _toArray) {
 	PropertyNodeList.prototype.toString = function() {
 		return "[object PropertyNodeList]";
 	}
-
+	
 // --- === PropertyNodeList CLASS [END] and method item below === ---
+	}
 
+	if(!global["HTMLPropertiesCollection"]) {
 // --- === HTMLPropertiesCollection CLASS [BEGIN] === ---
-
 	/**
 	 * @constructor
 	 */
@@ -166,7 +163,7 @@ function(global, $$, _toArray) {
 		thisObj["names"] = [];
 	}
 	/**
-	 * Non-standart (not in vative PropertyNodeList class) method
+	 * Non-standart (not in vative HTMLPropertiesCollection class) method
 	 * @param {Node} newNode DOM-element to add
 	 * @param {string|Node} prop_value Microdata-property value
 	 * @param {string} name Microdata-property name
@@ -191,7 +188,6 @@ function(global, $$, _toArray) {
 	HTMLPropertiesCollection.prototype["namedItem"] = function(p_name) {
 		return this[p_name] instanceof PropertyNodeList ? this[p_name] : new PropertyNodeList();
 	}
-
 	/**
 	 * @return {string}
 	 */
@@ -210,6 +206,7 @@ function(global, $$, _toArray) {
 		return thisObj[_index] || null;
 	}
 // --- === HTMLPropertiesCollection CLASS [END] === ---
+	}
 
 	/**
 	 * Compares the document position of two elements.
@@ -388,8 +385,8 @@ function(global, $$, _toArray) {
 		return matches;
 	}
 	
-	if(DocumentFragment && DocumentFragment.prototype) {
-		DocumentFragment.prototype["getItems"] = document["getItems"];
+	if(global.DocumentFragment && global.DocumentFragment.prototype) {
+		global.DocumentFragment.prototype["getItems"] = document["getItems"];
 	}
 	else {//IE < 8
 		var msie_CreateDocumentFragment = function() {
@@ -407,8 +404,8 @@ function(global, $$, _toArray) {
 	function fixPrototypes(global) {
 		if(fixPrototypes.isfixed)return;
 
-		if(DocumentFragment && DocumentFragment.prototype) {
-			DocumentFragment.prototype["getItems"] = document["getItems"];
+		if(global.DocumentFragment && global.DocumentFragment.prototype) {
+			global.DocumentFragment.prototype["getItems"] = document["getItems"];
 		}
 		
 		MicrodataJS["fixItemElement"] = function(val) { return val }
@@ -430,6 +427,6 @@ function(global, $$, _toArray) {
 ))
 (
 	window,
-	function(selector) {return window.$$ ? window.$$(selector) : Array.prototype.slice.apply(document.querySelectorAll(selector))},//Youre own function(){return toArray(querySelectorAll(#selector#))} function
-	function(iterable) {return window.$A ? window.$A(iterable) : Array.prototype.slice.apply(iterable)}//Youre own toArray function
+	function(selector) {return window["$$"] ? window["$$"](selector) : Array.prototype.slice.apply(document.querySelectorAll(selector))},//Youre own function(){return toArray(querySelectorAll(#selector#))} function
+	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}//Youre own toArray function
 )
