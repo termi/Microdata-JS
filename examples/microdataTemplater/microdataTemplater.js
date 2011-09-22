@@ -3,6 +3,46 @@
 //closure
 ;(function(global, ajax) {
 
+/**
+ * @constructor
+ */
+function Variable(_name, _value, _getter, _setter) {
+	var thisObj = this;
+	
+	/**
+	 * @param {string}
+	 * @param {Object|string} One string param or params like ?param1=123&param2=321 in Object {param1:123,param2:321}
+	 */
+	thisObj.set = function(newVal, params) {
+		newVal = _setter ? _setter(newVal, params) : newVal;
+		if(newVal !== false)_value = newVal;
+		return _value;
+	}
+	thisObj.get = function(params) {
+		return _getter ? _getter(_value, params) : _value;
+	}
+}
+/**
+ * @param {string}
+ * @return {Object|string}
+ */
+Variable.prototype.parseParams = function(paramStr) {
+	if(!paramStr)return;
+
+	var result = {},
+		paramStr = paramStr.split("&"),
+		i = 0,
+		p;
+		
+	while(p = paramStr[i++]) {
+		p = p.split("=");
+		
+		result[p[0]] = p[1] || p[0];
+	}
+	
+	return result;
+}
+
 /** Темплейтер на основе HTML5 Microdata API
  * @param {Node} microdataItem Корневой DOM-элемент - Microdata Item
  * @param {Object|Array.<Object>} data Данные для вставки в microdataItem */
@@ -10,10 +50,14 @@ global.microdataTemplate = new function() {
 	var thisObj = this;
 	
 /* PRIVATE */
-	var _documentFragment = document.createDocumentFragment();
+	var _documentFragment,
+		/** @type {Object} Ассоциативный массив Variable */
+		_variables = {};
 
 /* OPTIONS */
-	//thisObj.options = thisObj.options || {};
+	thisObj.options = thisObj.options || {};
+	/*thisObj.options.useVariable = true;*/
+	thisObj.options.variablesPropertyName = "GLOBAL";
 	
 /* PRIVATE | FUNCTIONS */
 	function _isEmptyElement(element) {
@@ -61,27 +105,33 @@ global.microdataTemplate = new function() {
 			if(cch = _documentFragment._URL_CACHE[fullSrc])
 				_element_ready(cch, onLoad_callback);
 			
-			//TODO::load element 
+			//TODO::load element
+			
 			ajax.send(_src[0], fn = function(xhr) {
-				if(xhr.responseText) {
-					var newEl;
-					
-					if(_documentFragment._URL_CACHE[_src[0]]) {						
-						_documentFragment._URL_CACHE[fullSrc] = _src[1] ? _documentFragment.querySelector("#" + _src[1]) : newEl;
+				try {
+					if(xhr.responseText) {
+						var newEl;
+						
+						if(_documentFragment._URL_CACHE[_src[0]]) {						
+							_documentFragment._URL_CACHE[fullSrc] = _src[1] ? _documentFragment.querySelector("#" + _src[1]) : newEl;
+						}
+						else {
+							newEl = document.createElement("div");
+							
+							_documentFragment.appendChild(newEl);
+							newEl.innerHTML = xhr.responseText;
+							
+							_documentFragment._URL_CACHE[fullSrc] = _src[1] ? _documentFragment.querySelector("#" + _src[1]) : newEl;
+						}
+						
+						_element_ready(_documentFragment._URL_CACHE[fullSrc], onLoad_callback);
 					}
 					else {
-						newEl = document.createElement("div");
-						
-						_documentFragment.appendChild(newEl);
-						newEl.innerHTML = xhr.responseText;
-						
-						_documentFragment._URL_CACHE[fullSrc] = _src[1] ? _documentFragment.querySelector("#" + _src[1]) : newEl;
+						//TODO:: error load teamplate
 					}
-					
-					_element_ready(_documentFragment._URL_CACHE[fullSrc], onLoad_callback);
 				}
-				else {
-					//TODO:: error load teamplate
+				catch(e) {
+				
 				}
 			}, fn);
 		}		
@@ -104,7 +154,8 @@ global.microdataTemplate = new function() {
 	 */
 	function _setItemValue(element, value, itemprop, forse) {
 		var elementName = element.nodeName,
-			attrTo = "innerHTML",
+			isMicrodataItem = element.getAttribute("itemscope") !== null || element.getAttribute("itemtype") !== null,
+			attrTo = isMicrodataItem ? "" : "innerHTML",
 			attrFrom = attrTo,
 			tmplOptions = JSON.parse(element.getAttribute("data-tmpl-options")) || {},
 			templateElement = element.__templateElement__;
@@ -114,19 +165,24 @@ global.microdataTemplate = new function() {
 			
 		attrFrom = tmplOptions["source"] || attrFrom;
 		
-		if(tmplOptions.target)
-			attrTo = tmplOptions.target;
-		else if(elementName === 'META')
-			attrTo = "content";
-		else if(['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName) !== -1)
-			attrTo = "src";
-		else if(['A', 'AREA', 'LINK'].indexOf(elementName) !== -1)
-			attrTo = "href";
-		else if(elementName === 'OBJECT')
-			attrTo = "data";
-		else if (elementName === 'TIME' && element.getAttribute('datetime'))
-			attrTo = "dateTime";//TODO:: Check IE[7,6]
-			
+		if(tmplOptions["target"])
+			attrTo = tmplOptions["target"];
+		
+		if(!isMicrodataItem) {
+			if(elementName === 'META')
+				attrTo = "content";
+			else if(['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName) !== -1)
+				attrTo = "src";
+			else if(['A', 'AREA', 'LINK'].indexOf(elementName) !== -1)
+				attrTo = "href";
+			else if(elementName === 'OBJECT')
+				attrTo = "data";
+			else if (elementName === 'TIME' && element.getAttribute('datetime'))
+				attrTo = "dateTime";//TODO:: Check IE[7,6]
+		}
+		
+		if(!attrTo || !attrFrom)return value;
+		
 		//Если в шаблоне не указано откуда брать данные - проверяем текстовые ноды
 		if(attrTo === "innerHTML" && attrTo == attrFrom) {
 			var textNodesValues = [], forseReturn;
@@ -174,8 +230,10 @@ global.microdataTemplate = new function() {
 			}
 		}
 		else {
-			if(itemprop && ~(element.getAttribute(attrFrom)||"").indexOf("#" + itemprop + "#"))
+			if(itemprop && ~(element.getAttribute(attrFrom)||"").indexOf("#" + itemprop + "#")) {
 				element[attrTo] = element.getAttribute(attrFrom).replace("#" + itemprop + "#", value);
+				if(element.getAttribute(attrTo) !== null)element.setAttribute(attrTo, element[attrTo]);
+			}
 			else element[attrTo] = value;
 		}
 		
@@ -186,60 +244,90 @@ global.microdataTemplate = new function() {
 	/** Установим значение одного property
 	 * @param {string} */
 	thisObj.setProperty = function(element, propertyName, data, forse) {
-		var /** @type {List.<string>}*/
-			props = propertyName.split("."),
+		var /** @type {Array.<string>} */
+			propertyNames,
+			/** @type {boolean} */
+			isMicrodataItem = element.getAttribute("itemscope") !== null || element.getAttribute("itemtype") !== null,
+			/** @type {Array.<string>} */
+			props,
 			/** @type {number} */
-			i = 1,
+			i = isMicrodataItem ? 0 : 1,
+			/** @type {number} */
+			j = 0,
 			/** @type {Object} Настройки шаблона */
 			tmplOptions,
-			/** @type {string} */
+			/** @type {Object|string} */
 			curProp_value = data,
 			/** @type {Boolean} Значение свойства - массив? */
-			curProp_value_isArray = false;
+			curProp_value_isArray = false,
+			/** @type {string} */
+			tempStr;
 			
 		tmplOptions = JSON.parse(element.getAttribute("data-tmpl-options")) || {};
 		//Если в настройках переназначается propertyName
 		if(tmplOptions["itemprop"])propertyName = tmplOptions["itemprop"];
-		//Проверим, не хотим ли мы принудительно привести к массиву
-		if(propertyName.substr(-2) === "[]")curProp_value_isArray = true, propertyName = propertyName.substring(0, propertyName.length - 2);
 		
-		props = propertyName.split(".");
-		
-		while((curProp = props[i++]) && curProp_value) {
-			curProp_value = curProp_value[curProp];
-		}
-		//Проверим еще раз свойство на массив
-		//Если значение свойства - не массив, а в шаблоне указано, что массив - принудительно приводим значение сво-ва к массиву
-		curProp_value_isArray = curProp_value_isArray || Array.isArray(curProp_value);
-		
-		//Проверим, что мы получили последнее свойство в цепочке (prop1.prop2.prop3... etc)
-		if(curProp_value === void 0 || curProp_value === null || i != props.length + 1)return;
-		
-		//Текущий элемент - Microdata Item
-		if(element.getAttribute("itemscope") != null) {
-			thisObj.setItem(element, data, forse);
-		}
-		else {
-			if(curProp_value_isArray) {
-				var first = true, el;
-				$A(curProp_value).forEach(function(curVal) {//Принудительно преведём к массиву и пробежимся по нему
-					if(first) {
-						_setItemValue(element, curVal, propertyName, forse);
-						
-						first = false;
-						return;
-					}
-					
-					el = insertAfter(
-						element.parentNode, 
-						cloneElement(element),
-						element._lastInsertedNode || element);
-						
-					el.__templateElement__ = element.__templateElement__;
-					_setItemValue(el, curVal, propertyName, forse);
-				})
+		propertyNames = propertyName.split(" ");
+		if(propertyName)while(propertyName = propertyNames[j++]) {
+			i = isMicrodataItem ? 0 : 1;
+			curProp_value = data;
+			curProp_value_isArray = false;
+			
+			//Проверим, не хотим ли мы принудительно привести к массиву
+			if(propertyName.substr(-2) === "[]")curProp_value_isArray = true, propertyName = propertyName.substring(0, propertyName.length - 2);
+			
+			props = propertyName.split(".");
+			
+			//Variables
+			if(props[0] == thisObj.options.variablesPropertyName) {
+				props = propertyName.split("?");
+				tempStr = props[1];
+				propertyName = props[0];
+				props = props[0].split(".");
+				if(props[1]) {
+					curProp_value = _variables[props[1]];
+					if(curProp_value)curProp_value = curProp_value.get(curProp_value.parseParams(tempStr));
+					i = props.length + 1;
+				}
+				else curProp_value = null;
 			}
-			else _setItemValue(element, curProp_value, propertyName, forse);
+			else while((curProp = props[i++]) && curProp_value) {
+				curProp_value = curProp_value[curProp];
+			}
+			//Проверим еще раз свойство на массив
+			//Если значение свойства - не массив, а в шаблоне указано, что массив - принудительно приводим значение сво-ва к массиву
+			curProp_value_isArray = curProp_value_isArray || Array.isArray(curProp_value);
+			
+			//Проверим, что мы получили последнее свойство в цепочке (prop1.prop2.prop3... etc)
+			if(curProp_value === void 0 || curProp_value === null || i != props.length + 1)return;
+			
+			//Текущий элемент - Microdata Item
+			if(element.getAttribute("itemscope") != null) {
+				_setItemValue(element, curProp_value, propertyName, forse);
+				//thisObj.setItem(element, data, forse);
+			}
+			else {
+				if(curProp_value_isArray) {
+					var first = true, el;
+					$A(curProp_value).forEach(function(curVal) {//Принудительно преведём к массиву и пробежимся по нему
+						if(first) {
+							_setItemValue(element, curVal, propertyName, forse);
+							
+							first = false;
+							return;
+						}
+						
+						el = insertAfter(
+							element.parentNode, 
+							cloneElement(element),
+							element._lastInsertedNode || element);
+							
+						el.__templateElement__ = element.__templateElement__;
+						_setItemValue(el, curVal, propertyName, forse);
+					})
+				}
+				else _setItemValue(element, curProp_value, propertyName, forse);
+			}
 		}
 	}
 	
@@ -276,7 +364,9 @@ global.microdataTemplate = new function() {
 
 		//Для старых браузеров: пофиксим Microdata-элемент
 		itemElement = global.MicrodataJS.fixItemElement(itemElement);
-			
+		
+		thisObj.setProperty(itemElement, "", data, forse);
+		
 		$A(itemElement.properties.names).forEach(function(name) {
 			$A(itemElement.properties[name]).forEach(function(DOMElement) {
 				if(DOMElement.getAttribute("itemscope") != null && data[name]) {
@@ -293,9 +383,22 @@ global.microdataTemplate = new function() {
 	
 	}
 	
+	thisObj.registerVariable = function(varName, initValue, getter, setter) {
+		_variables[varName] = new Variable(varName, initValue, getter, setter);
+	}
 /* INIT */
 	thisObj.init = function() {
+		_documentFragment = document.createDocumentFragment();
+		_documentFragment._URL_CACHE = [];
 		
+		thisObj.registerVariable("date", null, function(val, params) {
+			var _format = typeof params == "string" ? params : params && params["format"],
+				result = new Date();
+			
+			return _format && result.format ? result.format(_format) : result + "";
+		}, function (){return false});
+		
+		thisObj.init = function(){}
 	}
 }
 

@@ -9,7 +9,8 @@
 <script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
 <![endif]-->
 <script src=a.js?1></script><!-- Only for $$ and toArray functions -->
-<script src=../../microdata-js.js?2></script>
+<script src=Date.prototype.format.js></script>
+<script src=../../__SRC/microdata-js.js?2></script>
 <!--script src=../../__SRC/microdata-js.js></script-->
 <script src=microdataTemplater.js?3></script>
 <script>
@@ -90,7 +91,7 @@ window.onload = function() {
 	</header>
 	
 	<ul class="data">
-		<li itemprop=messages itemscope itemtype="template:chat/message">
+		<li itemprop=messages itemscope itemtype="template:chat/message" itemid="uuid:#from.id#:chat:message?datestamp=#GLOBAL.date#" data-tmpl-options='{"itemprop":"from.id GLOBAL.date?format=dd_mm.yyyy_HHMMss","source":"itemid","target":"itemid"}'>
 			<span itemprop=from.name>
 				Message from #from.name# (<span itemprop="from.nick"></span>)
 			</span>
