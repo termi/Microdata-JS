@@ -15,6 +15,19 @@
 <script src=microdataTemplater.js?3></script>
 <script>
 window.onload = function() {
+	function _isEmptyElement(element) {
+		var isEmpty = !element.firstChild, i = 0;
+		
+		if(!isEmpty) {
+			isEmpty = true;
+			
+			while((el = element.childNodes[i++]) && isEmpty)
+				isEmpty = el.nodeType === 3 && el.nodeValue.trim() === "";
+		}
+		
+		return isEmpty;
+	}
+	
 	var data = {
 		account : {
 			id : 15654,
@@ -73,7 +86,17 @@ window.onload = function() {
 	
 	if(chatTemplate)
 		$A(chatTemplate).forEach(function(itt) {
-			global.microdataTemplate.setItem(itt, curData);
+			if(!(_isEmptyElement(itt)))
+				global.microdataTemplate.setItem(itt, curData);
+			else {
+				var btn = document.createElement("button");
+				btn.innerHTML = "Parse Remote teamplate";
+				btn.onclick = function() {
+					itt.innerHTML = "";
+					global.microdataTemplate.setItem(itt, curData);
+				}
+				itt.appendChild(btn);
+			}
 		});
 }
 </script>
@@ -86,8 +109,9 @@ window.onload = function() {
 
 <section itemscope itemtype="template:chat">
 	<header>
-		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>
+		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id GLOBAL.date?format=HHMMss","source":"data-src"}' data-src="i/av/#account.id#.jpg?#GLOBAL.date#" alt=Аватара>
 		<p><span itemprop=account.name></span> (<span itemprop=account.nick></span>)
+		<p itemprop=create_date data-tmpl-options='{"itemprop":"GLOBAL.date?format=dd_mm_yy_HH:MM:ss"}'>
 	</header>
 	
 	<ul class="data">
@@ -99,7 +123,7 @@ window.onload = function() {
 	</ul>
 </section>
 
-Remote teamplate test (put files for you server for word):
+Remote teamplate test (<b style="color:red">put files for you server for work</b>):
 <section itemscope itemtype="template:chat" itemid="http://localhost/Microdata-JS/examples/microdataTemplater/tmpl.txt#testRemoteSection">
 </section>
 
@@ -111,7 +135,7 @@ Remote teamplate test (put files for you server for word):
 	<header>
 		ID:<p itemprop=account.id[]>#account.id#<span>|</span></p>
 		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>
-		<p><span itemprop=account.name></span> (<span itemprop=account.nick></span>)
+		<p><span itemprop=account.name>Name is #account.name# nick is(<b itemprop=account.nick></b>)</span>
 		<p itemprop="account.name account.nick">TEST:Name: #account.name# | Nick:(#account.nick#)
 	</header>
 	
@@ -124,7 +148,7 @@ Remote teamplate test (put files for you server for word):
 	</ul>
 	
 	<footer>
-		<p>Новое сообщение:</p>
+		<p>New message:</p>
 		<textarea></textarea>
 		<div class="btns">
 			<p data-action=send>Send

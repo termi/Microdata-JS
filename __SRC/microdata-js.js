@@ -372,7 +372,8 @@ function(global, $$, _toArray) {
 		
 		itemTypes = itemTypes || "";//default value
 		
-		var items = this["__getItemsCACHE__"][itemTypes] || (this["__getItemsCACHE__"][itemTypes] = $$("[itemscope]", this)),
+		var items = this["__getItemsCACHE__"][itemTypes] || 
+				(this["__getItemsCACHE__"][itemTypes] = $$("[itemscope]", this)),
 			matches = [],
 			_itemTypes = (itemTypes || "").trim().split(/\s+/);
 		
