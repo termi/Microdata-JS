@@ -16,7 +16,7 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.1.1
+ * @version 2.3
  */
 
 global["MicrodataJS"] = {};
@@ -70,7 +70,6 @@ MicrodataJS["setItemValue"] = function(element, value) {
 	else if (elementName === 'TIME' && element.getAttribute('datetime'))
 		attrTo = "dateTime";//TODO:: Check IE[7,6]
 	
-	//Если в шаблоне не указано откуда брать данные - проверяем текстовые ноды
 	return element[attrTo] = value;
 }
 
@@ -363,26 +362,27 @@ function(global, $$, _toArray) {
 		return properties;
 	}
 	
-	var _CACHE = {};
-	
 	/**
 	 * Gets all of the elements that have an itemType
 	 * @param {string} itemTypes - whitespace-separated string of types to match
+	 * @this {Document|DocumentFragment}
 	 */
 	document["getItems"] = function (itemTypes) {
-		var _itemTypes = itemTypes || "";//default value
-	
-		var items = _CACHE[itemTypes] || (_CACHE[itemTypes] = $$("[itemscope]")),
-			matches = [];
+		if(!this["__getItemsCACHE__"])this["__getItemsCACHE__"] = {};
 		
-		_itemTypes = _itemTypes.trim().split(/\s+/);
-		for (var j = 0, l1 = _itemTypes.length ; j < l1 ; ++j)_CACHE[_itemTypes[j]] = items;
+		itemTypes = itemTypes || "";//default value
 		
-		for (var i = 0, l = items.length ; i < l ; ++i) {
+		var items = this["__getItemsCACHE__"][itemTypes] || (this["__getItemsCACHE__"][itemTypes] = $$("[itemscope]", this)),
+			matches = [],
+			_itemTypes = (itemTypes || "").trim().split(/\s+/);
+		
+		if(_itemTypes.length > 1)for(var j = 0, l1 = _itemTypes.length ; j < l1 ; ++j)this["__getItemsCACHE__"][_itemTypes[j]] = items;
+		
+		for(var i = 0, l = items.length ; i < l ; ++i) {
 			var node = items[i],
 				type = node.getAttribute('itemtype');
 				
-			if((!_itemTypes || ~_itemTypes.indexOf(type)) &&
+			if((!itemTypes || ~_itemTypes.indexOf(type)) &&
 				!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 				(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
 				matches.push(MicrodataJS["fixItemElement"](node));
@@ -438,6 +438,10 @@ function(global, $$, _toArray) {
 ))
 (
 	window,
-	function(selector) {return window["$$"] ? window["$$"](selector) : Array.prototype.slice.apply(document.querySelectorAll(selector))},//Youre own function(){return toArray(querySelectorAll(#selector#))} function
+	/**
+	 * @param {string} selector
+	 * @param {Document|DocumentFragment} root
+	 */
+	function(selector, root) {return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},//Youre own function(){return toArray(root.querySelectorAll(#selector#))} function
 	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}//Youre own toArray function
 )
