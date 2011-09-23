@@ -19,16 +19,16 @@
  * @version 2.1.1
  */
 
-MicrodataJS = global["MicrodataJS"] = {};
+global["MicrodataJS"] = {};
 /**
  * Returns the itemValue of an Element.
  * http://www.w3.org/TR/html5/microdata.html#values
  * or http://dev.w3.org/html5/md/#dom-itemvalue
  *
  * @param {Element} element The element to extract the itemValue for.
- * @return {string|Node} The itemValue of the element.
+ * @return {string|Node} The itemValue of the element or Microdata Item element
  */
-getItemValue = MicrodataJS["getItemValue"] = function(element) {
+MicrodataJS["getItemValue"] = function(element) {
 	var elementName = element.nodeName;
 
 	if(element.getAttribute("itemscope") !== null)//hasAttribute("itemscope")
@@ -51,8 +51,9 @@ getItemValue = MicrodataJS["getItemValue"] = function(element) {
  * Set the itemValue of an Element.
  * http://www.w3.org/TR/html5/microdata.html#values
  *
- * @param {Node} element The element to extract the itemValue for.
+ * @param {Element} element The element to extract the itemValue for.
  * @param {string} value The itemValue of the element.
+ * @return {string} "value" param value
  */
 MicrodataJS["setItemValue"] = function(element, value) {
 	var elementName = element.nodeName,
@@ -70,7 +71,7 @@ MicrodataJS["setItemValue"] = function(element, value) {
 		attrTo = "dateTime";//TODO:: Check IE[7,6]
 	
 	//Если в шаблоне не указано откуда брать данные - проверяем текстовые ноды
-	element[attrTo] = value;
+	return element[attrTo] = value;
 }
 
 ;(!document["getItems"] ? (
@@ -82,7 +83,15 @@ MicrodataJS["setItemValue"] = function(element, value) {
  */
 function(global, $$, _toArray) {
 	//Import
-	var fixItemElement = MicrodataJS["fixItemElement"] = function(_element) {
+	var MicrodataJS = global["MicrodataJS"];
+	
+	/**
+	 * Fix Microdata Item Element for browsers with no Microdata support
+	 *
+	 * @param {Element} _element The Microdata DOM-element with 'itemScope' and 'itemtype' attributes
+	 * @return {Element}
+	 */
+	MicrodataJS["fixItemElement"] = function(_element) {
 		var val;
 		_element['itemScope'] = true;
 
@@ -117,7 +126,7 @@ function(global, $$, _toArray) {
 	}
 	/**
 	 * Non-standart (not in vative PropertyNodeList class) method
-	 * @param {Node} newNode DOM-element to add
+	 * @param {Element} newNode DOM-element to add
 	 */
 	PropertyNodeList.prototype._push = function(newNode, prop_value) {
 		var thisObj = this;
@@ -164,7 +173,7 @@ function(global, $$, _toArray) {
 	}
 	/**
 	 * Non-standart (not in vative HTMLPropertiesCollection class) method
-	 * @param {Node} newNode DOM-element to add
+	 * @param {Element} newNode DOM-element to add
 	 * @param {string|Node} prop_value Microdata-property value
 	 * @param {string} name Microdata-property name
 	 */
@@ -196,7 +205,7 @@ function(global, $$, _toArray) {
 	}
 	/**
 	 * @param {number} index of item
-	 * @return {Node} 
+	 * @return {Element} 
 	 */
 	HTMLPropertiesCollection.prototype["item"] = PropertyNodeList.prototype["item"] = function(_index) {
 		var thisObj = this;
@@ -343,7 +352,7 @@ function(global, $$, _toArray) {
 		
 		props.forEach(function(property) {
 			var p_names = property.getAttribute("itemprop").split(" "),
-				prop_value = getItemValue(property);
+				prop_value = MicrodataJS["getItemValue"](property);
 			
 			property["itemValue"] = prop_value;
 			//The itemprop attribute, if specified, must have a value that is an unordered set of unique space-separated tokens representing the names of the name-value pairs that it adds. The attribute's value must have at least one token.
@@ -376,7 +385,7 @@ function(global, $$, _toArray) {
 			if((!_itemTypes || ~_itemTypes.indexOf(type)) &&
 				!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 				(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
-				matches.push(fixItemElement(node));
+				matches.push(MicrodataJS["fixItemElement"](node));
 				
 				//node.toJSON = microdata_toJSON;//TODO
 			}
@@ -385,8 +394,8 @@ function(global, $$, _toArray) {
 		return matches;
 	}
 	
-	if(global.DocumentFragment && global.DocumentFragment.prototype) {
-		global.DocumentFragment.prototype["getItems"] = document["getItems"];
+	if(global["DocumentFragment"] && global["DocumentFragment"].prototype) {
+		global["DocumentFragment"].prototype["getItems"] = document["getItems"];
 	}
 	else {//IE < 8
 		var msie_CreateDocumentFragment = function() {
@@ -403,9 +412,11 @@ function(global, $$, _toArray) {
 // 2. Microdata supported
 	function fixPrototypes(global) {
 		if(fixPrototypes.isfixed)return;
+		
+		var MicrodataJS = global["MicrodataJS"];
 
-		if(global.DocumentFragment && global.DocumentFragment.prototype) {
-			global.DocumentFragment.prototype["getItems"] = document["getItems"];
+		if(global["DocumentFragment"] && global["DocumentFragment"].prototype) {
+			global["DocumentFragment"].prototype["getItems"] = document["getItems"];
 		}
 		
 		MicrodataJS["fixItemElement"] = function(val) { return val }

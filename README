@@ -1,15 +1,49 @@
-Implementation of the HTMl5 Microdata specification.
+<html>
+<h1>Implementation of the <a href="http://www.w3.org/TR/html5/microdata.html">HTML5 Microdata specification</a>.</h1>
 
- + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
+ + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes<br />
  + Extending DocumentFragment.prototype with getItems function
 
-Browsers support:
+<h2>Microdata JS API</h2>
+<pre>
+window.<b>MicrodataJS</b> = {
+<span style="color:green">    /**
+     * Returns the itemValue of an Element.
+     * http://www.w3.org/TR/html5/microdata.html#values
+     * or http://dev.w3.org/html5/md/#dom-itemvalue
+     *
+     * @param {Element} element The element to extract the itemValue for.
+     * @return {string|Element} The itemValue of the element or Microdata Item element
+     */</span>
+    <b>getItemValue</b> = function(){...},
+<span style="color:green">    /**
+     * Set the itemValue of an Element.
+     * http://www.w3.org/TR/html5/microdata.html#values
+     *
+     * @param {Element} element The element to extract the itemValue for.
+     * @param {string} value The itemValue of the element.
+     * @return {string} "value" param value     
+     */</span>
+    <b>setItemValue</b> = function() {...},
+<span style="color:green">    /**
+     * Fix Microdata Item Element for browsers with no Microdata support
+     * Do nothing for browsers with Microdata support
+     *
+     * @param {Element} element The Microdata DOM-element with 'itemScope' and 'itemtype' attributes
+     * @return {Element}
+     */</span>
+    <b>fixItemElement</b> = function() {...}
+}
+</pre>
+<h2>Browsers support:</h2><pre>
 Opera, Google Chrome, Safary, FireFox, IE8
 
  + for IE < 8 support you need toArray and querySelectorAll functions. Set the window.$A to your toArray function. Set the window.$$ to your querySelectorAll function
  * required:
-	toArray function must return array ["1", "2", "3"] for string "123"
-	querySelectorAll must return array
+    toArray function must return array ["1", "2", "3"] for string "123"
+    querySelectorAll must return array</pre>
 
-TODO:
- 1. Microdata_to_JSON function
+<h3>TODO:</h3>
+<ol>
+    <li>Microdata_to_JSON function
+    <li>Implement "property" as getter
