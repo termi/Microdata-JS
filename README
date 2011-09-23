@@ -1,0 +1,46 @@
+Implementation of the HTMl5 Microdata specification.
+
+ + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
+ + Extending DocumentFragment.prototype with getItems function
+
+Microdata JS API
+window.MicrodataJS = {
+	/**
+	 * Returns the itemValue of an Element.
+	 * http://www.w3.org/TR/html5/microdata.html#values
+	 * or http://dev.w3.org/html5/md/#dom-itemvalue
+	 *
+	 * @param {Element} element The element to extract the itemValue for.
+	 * @return {string|Element} The itemValue of the element or Microdata Item element
+	 */
+	getItemValue = function(){...},
+	/**
+	 * Set the itemValue of an Element.
+	 * http://www.w3.org/TR/html5/microdata.html#values
+	 *
+	 * @param {Element} element The element to extract the itemValue for.
+	 * @param {string} value The itemValue of the element.
+	 * @return {string} "value" param value	 
+	 */
+	setItemValue = function() {...},
+	/**
+	 * Fix Microdata Item Element for browsers with no Microdata support
+	 * Do nothing for browsers with Microdata support
+	 *
+	 * @param {Element} element The Microdata DOM-element with 'itemScope' and 'itemtype' attributes
+	 * @return {Element}
+	 */
+	fixItemElement = function() {...}
+}
+
+Browsers support:
+Opera, Google Chrome, Safary, FireFox, IE8
+
+ + for IE < 8 support you need toArray and querySelectorAll functions. Set the window.$A to your toArray function. Set the window.$$ to your querySelectorAll function
+ * required:
+	toArray function must return array ["1", "2", "3"] for string "123"
+	querySelectorAll must return array
+
+TODO:
+ 1. Microdata_to_JSON function
+ 2. Implement "property" as getter
