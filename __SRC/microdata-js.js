@@ -16,10 +16,12 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.3
+ * @version 2.4
  */
 
-global["MicrodataJS"] = {};
+;(function(global, $$, _toArray) {
+
+var MicrodataJS = global["MicrodataJS"] = {};
 /**
  * Returns the itemValue of an Element.
  * http://www.w3.org/TR/html5/microdata.html#values
@@ -436,7 +438,8 @@ function(global, $$, _toArray) {
 			fixPrototypes.isfixed = true;
 		}
 	}
-))
+))(global, $$, _toArray);
+})
 (
 	window,
 	/**
