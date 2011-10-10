@@ -46,3 +46,4 @@ Opera, Google Chrome, Safary, FireFox, IE8
 TODO:
  1. Microdata_to_JSON function
  2. Implement "property" as getter
+ 3. Delete code adding "getValues" property if it not compliance with FINALE Microdata specification
