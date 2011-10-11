@@ -1,0 +1,6 @@
+<PUBLIC:COMPONENT lightWeight="true">
+<PUBLIC:PROPERTY NAME="properties" GET="get" />
+<SCRIPT>
+var get=function(){return this.__ie_getProperties__()};
+</SCRIPT>
+</PUBLIC:COMPONENT>

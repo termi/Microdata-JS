@@ -365,18 +365,28 @@ global.microdataTemplate = new function() {
 		//Для старых браузеров: пофиксим Microdata-элемент
 		itemElement = global.MicrodataJS.fixItemElement(itemElement);
 		
-		thisObj.setProperty(itemElement, "", data, forse);
+		//thisObj.setProperty(itemElement, "", data, forse);
 		
-		$A(itemElement.properties.names).forEach(function(name) {
-			$A(itemElement.properties[name]).forEach(function(DOMElement) {
-				if(DOMElement.getAttribute("itemscope") != null && data[name]) {
-					thisObj.setItem(DOMElement, data[name], forse);
-				}
-				else {
-					thisObj.setProperty(DOMElement, name, data[name.split(".")[0]], forse);
-				}
-			})
-		})
+		function doit() {
+			$A(itemElement.properties.names).forEach(function(name) {
+				$A(itemElement.properties[name]).forEach(function(DOMElement) {
+					if(DOMElement.getAttribute("itemscope") != null && data[name]) {
+						thisObj.setItem(DOMElement, data[name], forse);
+					}
+					else {
+						thisObj.setProperty(DOMElement, name, data[name.split(".")[0]], forse);
+					}
+				})
+			});
+		};
+		
+		if(itemElement.properties)doit();
+		else {
+			// --- TEMPORARY ---
+			//IE < 8 need some time to apply Element.propery.htc behavior
+			//TODO:: do better
+			setTimeout(doit, 10);
+		}
 	}
 	
 	thisObj.set = function(item_or_property) {

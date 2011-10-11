@@ -11,6 +11,7 @@
 <script src=a.js?1></script><!-- Only for $$ and toArray functions -->
 <script src=Date.prototype.format.js></script>
 <script src=../../__SRC/microdata-js.js?3></script>
+<script src=../../__SRC/ielt8/ielt8.Microdata-JS.plugin.js></script>
 <!--script src=../../__SRC/microdata-js.js></script-->
 <script src=microdataTemplater.js?3></script>
 <script>
@@ -86,6 +87,7 @@ window.onload = function() {
 	
 	if(chatTemplate)
 		$A(chatTemplate).forEach(function(itt) {
+			
 			if(!(_isEmptyElement(itt)))
 				global.microdataTemplate.setItem(itt, curData);
 			else {

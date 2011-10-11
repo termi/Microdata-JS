@@ -2,6 +2,16 @@ var k=void 0,t=null,w=window.global=window,y=document,z=!!window.console,B={w:na
 B.u=document.createElement("div");B.ia=typeof B.u.childElementCount!="undefined";B.aa=typeof document.createElement("INPUT").placeholder!="undefined";if(!document.readyState)B.t=!0;if(B.t)document.readyState="uninitialized";if(!Object.keys)Object.keys=function(a){var b=[],d;for(d in a)Object.prototype.hasOwnProperty.call(a,d)&&b.push(d);return b};if(!Object.getOwnPropertyNames)Object.getOwnPropertyNames=function(a){var b=[],d;for(d in a)b.push(d);return b};
 if(!Object.create)Object.create=function(a){function b(){}b.prototype=a;return new b};if(!Function.prototype.bind)Function.prototype.bind=Function.prototype.bind=function(a){var b=this,d=Array.prototype.slice.call(arguments,1);return function(){return b.apply(a,d.concat(Array.prototype.slice.call(arguments,0)))}};if(!Array.prototype.forEach)Array.prototype.forEach=function(a,b){for(var d in this)this.hasOwnProperty(d)&&a.call(b,this[d],parseInt(d,10),this)};
 if(!Array.prototype.indexOf)Array.prototype.indexOf=function(a,b){for(var d=b||0,g=this.length;d<g;d++)if(this[d]===a)return d;return-1};if(!Array.prototype.lastIndexOf)Array.prototype.lastIndexOf=function(a,b){return this.slice(0).reverse().indexOf(a,b)};if(!Array.prototype.every)Array.prototype.every=function(a,b,d){d===k&&(d=!0);var g=d;this.forEach(function(c,e){g==d&&(g=!!a.call(b,c,e,this))});return g};if(!Array.prototype.some)Array.prototype.some=function(a,b){return this.every(a,b,!1)};
+if(!Array.prototype.filter)Array.prototype.filter=function(fun,thisp){var len=this.length>>>0;if(typeof fun!="function")throw new TypeError();
+	var res = [];
+	for (var i = 0; i < len; i++)
+		if (i in this) {  
+			var val = this[i];// in case fun mutates this  
+			if(fun.call(thisp, val, i, this))res.push(val);
+		}
+
+	return res;
+}
 if(!Array.prototype.map)Array.prototype.map=function(a,b){var d,g,c;if(this==t)throw new TypeError(" this is null or not defined");var e=Object(this),m=e.length>>>0;if({}.toString.call(a)!="[object Function]")throw new TypeError(a+" is not a function");b&&(d=b);g=Array(m);for(c=0;c<m;){var p;c in e&&(p=e[c],p=a.call(d,p,c,e),g[c]=p);c++}return g};Array.isArray=Array.isArray||function(a){return!(!a||!a.concat||!a.unshift||a.callee)};
 if(!String.prototype.trim)String.prototype.trim=function(){for(var a=this.replace(/^\s\s*/,""),b=/\s/,d=a.length;b.test(a.charAt(--d)););return a.slice(0,d+1)};Object.append=function(a){for(var b=1;b<arguments.length;b++){var d=arguments[b],g;for(g in d)if(!d.hasOwnProperty||d.hasOwnProperty(g))a[g]=d[g]}return a};
 var E=global.SendRequest=function(a,b,d,g,c){function e(){return new (global.XMLHttpRequest||ActiveXObject)("Microsoft.XMLHTTP")}c=c||{};if(!E.j||E.D)E.j=t,E.D=!1,E.j=e(),window.n=!1;if(!window.o)w.o=[];setTimeout(function(){E.D=!0},3E5);var m=c.F?"POST":"GET",p=c.S||window.n;if(!window.n&&E.j||p){var f=p?window.o[E.a]=e():E.j,h=p?E.a++:t;!c.F&&b.length>0&&(a+="?"+b);f.open(m,a,!0);f.onreadystatechange=function(){f.readyState==4?(f.status==200?d&&d(f):g&&g(f),p?delete window.o[h]:

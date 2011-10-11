@@ -16,11 +16,12 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.4.2
+ * @version 2.5
  */
 
 ;(function(global, $$, _toArray) {
 
+// ---=== MicrodataJS API ===---
 var MicrodataJS = global["MicrodataJS"] = {
 	/**
 	 * Returns the itemValue of an Element.
@@ -60,13 +61,160 @@ var MicrodataJS = global["MicrodataJS"] = {
 			elementName === 'OBJECT' ? "data" :
 			elementName === 'TIME' && element.getAttribute('datetime') ? "dateTime" ://TODO:: Check element.dateTime in IE[7,6]
 			"innerHTML"] = value;
+	},	
+	/**
+	 * [Default value]
+	 * Returns the properties for the given item.
+	 *
+	 * @param {Element} item The item for which to find the properties.
+	 * @return {HTMLPropertiesCollection} The properties for the item.
+	 */
+	"getItemProperties" : function(item) {
+		return item["properties"]
+	},
+	/**
+	 * @type {Array.<Function>}
+	 */
+	"plugins" : [],
+	/**
+	 * Returns a JSON representation of the Microdata object.
+	 * @param {Node|Array.<Node>} itemElement DOM-element or array of DOM-elements with itemscope attribute
+	 * @return {Object}
+	 */
+	"itemToJSON" : function itemToJSON(itemElement) {
+		var result,
+			i = -1,
+			cur;
+		
+		if(itemElement.length !== undefined) {
+			result = {"items" : []};
+			
+			while(cur = itemElement[++i]) {
+				if(cur.getAttribute("itemscope") !== null)
+					result["items"].push(itemToJSON(cur))
+			}
+			
+			return result;
+		}
+		
+		if(itemElement.getAttribute("itemscope") !== null) {
+			result = {};
+			
+			var val;
+			
+			if(val = itemElement.getAttribute("itemid"))
+				result['id'] = val;
+
+			if(val = itemElement.getAttribute("itemtype"))
+				result['type'] = val;
+			
+			result["properties"] = itemElement["properties"].toJSON();
+		}
+		
+		return result;
 	}
 };
+
+
+function fixPrototypes(global) {
+	if(fixPrototypes.isfixed)return;
+	
+	/* too difficult
+	//Adding toJSON function
+	if(!fixPrototypes.new_getItems) {
+		fixPrototypes.new_getItems = function() {
+			var result = new_getItems.orig.apply(this, arguments);
+			
+			result.forEach(function(el) {
+				//el.toJSON = some_toJSON_function
+			})
+		}
+		fixPrototypes.new_getItems.orig = document["getItems"];
+		
+		document["getItems"] = fixPrototypes.new_getItems;
+	}*/
+	
+	if(!fixPrototypes.fixedDocumentFragment) {
+		//Fix DocumentFragment
+		var _a;
+		
+		if((_a = global["DocumentFragment"]) && (_a = _a.prototype)) {//_a === global["DocumentFragment"]
+			_a["getItems"] = document["getItems"];//_a === global["DocumentFragment"].prototype
+		}
+		else {//IE < 8
+			var msie_CreateDocumentFragment = function() {
+				var df = msie_CreateDocumentFragment.orig.call(document);
+				df["getItems"] = document["getItems"];
+				return df;
+			}
+			msie_CreateDocumentFragment.orig = document.createDocumentFragment;
+			
+			document.createDocumentFragment = msie_CreateDocumentFragment;
+		}
+		
+		fixPrototypes.fixedDocumentFragment = true;
+	}
+	
+	if(!(_a = global["PropertyNodeList"])) {
+		//"PropertyNodeList" and "HTMLPropertiesCollection" prototypers not yet implemented - waiting
+		global.addEventListener("DOMContentLoaded", fixPrototypes.bind(global, global), false),
+			global.addEventListener("load", fixPrototypes.bind(global, global), false)
+	}
+	else {
+		//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
+		//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
+		//TODO:: Check for compliance with FINALE Microdata specification.
+		if(!("values" in (_a = _a.prototype))) {//_a === global["PropertyNodeList"]
+			_a.__defineGetter__("values", function() {//_a === global["PropertyNodeList"].prototype
+				return this["getValues"]();
+			});
+		}
+		
+		var PropertyNodeList = global["PropertyNodeList"];
+		if(!(_a = PropertyNodeList.prototype).toJSON)_a.toJSON = function() {
+			var thisObj = this,
+				result = [],
+				values = thisObj["values"],
+				i = -1,
+				cur;
+			
+			while(cur = values[++i]) {
+				if(cur instanceof Element)
+					cur = MicrodataJS["itemToJSON"](cur);//if cur is not Microdata element return undefined
+				
+				cur && result.push(cur);
+			}
+			
+			return result;
+		}
+		_a = global["HTMLPropertiesCollection"];
+		if(!(_a = _a.prototype).toJSON)_a.toJSON = function() {
+			var thisObj = this,
+				result = {},
+				names = thisObj["names"],
+				i = -1,
+				cur;
+			
+			while(cur = names[++i])if(thisObj[cur] instanceof PropertyNodeList) {
+				result[cur] = thisObj[cur].toJSON();
+			}
+		
+			return result;
+		}
+	
+		fixPrototypes.isfixed = true;
+	}
+
+	//TODO:: somehow return nothing when fixPrototypes function fired second time
+	return fixPrototypes.emptyFunction//return MicrodataJS.fixItemElement
+}
+fixPrototypes.emptyFunction = function(val) { return val };
 
 /**
  * Fix Microdata Item Element for browsers with no Microdata support
  *
  * @param {Element} _element The Microdata DOM-element with 'itemScope' and 'itemtype' attributes
+ * @param {boolean} force Force to clean cached "properties" value and get newest "properties" value
  * @return {Element}
  */
 MicrodataJS["fixItemElement"] = (
@@ -110,6 +258,11 @@ MicrodataJS["fixItemElement"] = (
 			//TODO:: Still don't know what code here
 		}
 		/**
+		 * @type {undefined}
+		 * For compliance with real PropertyNodeList.prototype
+		 */
+		PropertyNodeList.prototype["values"] = void 0;
+		/**
 		 * @return {Array}
 		 */
 		PropertyNodeList.prototype["getValues"] = function() {
@@ -139,6 +292,24 @@ MicrodataJS["fixItemElement"] = (
 			//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
 			thisObj["names"] = [];
 		}
+		/**
+		 * Non-standart (not in native HTMLPropertiesCollection class) method
+		 * Clear HTMLPropertiesCollection
+		 */
+		HTMLPropertiesCollection.prototype._clear = function() {
+			var thisObj = this;
+			
+			for(var i in thisObj)
+				if(thisObj[i] instanceof PropertyNodeList) {
+					thisObj[i] = null;
+					delete thisObj[i];
+				}
+				
+			
+			thisObj["length"] = 0;
+			thisObj["names"] = [];
+		}
+		
 		/**
 		 * Non-standart (not in native HTMLPropertiesCollection class) method
 		 * @param {Element} newNode DOM-element to add
@@ -212,11 +383,18 @@ MicrodataJS["fixItemElement"] = (
 		 * @param {Element} item The item for which to find the properties.
 		 * @return {HTMLPropertiesCollection} The properties for the item.
 		 */
-		function getProperties(item) {
+		var getProperties = MicrodataJS["getItemProperties"] = function(item, force) {
+			var properties = item["__properties_CACHE__"];
+			
+			if(properties) {
+				if(!force)return properties;
+				else properties._clear();
+			}
+			else properties = item["__properties_CACHE__"] = new HTMLPropertiesCollection();
+			
 			var root = item,
 				pending = [],
 				props = [],
-				properties = new HTMLPropertiesCollection(),
 				references = [],
 				children,
 				current;
@@ -298,12 +476,9 @@ MicrodataJS["fixItemElement"] = (
 				if(current.getAttribute("itemprop")) {
 					props.push(current);
 
-					// This is a necessary deviation from the normal algorithm because
-					// we can not modify the Element prototype in IE7, so we recursively
-					// calculate the properties for each property that has an itemscope.
 					if(current.getAttribute("itemscope") !== null) {
 						current['itemScope'] = true;
-						current['properties'] = getProperties(current);
+						MicrodataJS["fixItemElement"](current);
 					}
 				}
 				
@@ -356,38 +531,19 @@ MicrodataJS["fixItemElement"] = (
 					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 					(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
 					matches.push(MicrodataJS["fixItemElement"](node));
-					
-					//node.toJSON = microdata_toJSON;//TODO
 				}
 			}
 			
 			return matches;
 		}
 		
-		var _a;
+		//Fixing
+		fixPrototypes(global);
 		
-		if((_a = global["DocumentFragment"]) && (_a = _a.prototype)) {//_a === global["DocumentFragment"]
-			_a["getItems"] = document["getItems"];//_a === global["DocumentFragment"].prototype
-		}
-		else {//IE < 8
-			var msie_CreateDocumentFragment = function() {
-				var df = msie_CreateDocumentFragment.orig.call(d);
-				df["getItems"] = document["getItems"];
-				return df;
-			}
-			msie_CreateDocumentFragment.orig = document.createDocumentFragment;
-			
-			document.createDocumentFragment = msie_CreateDocumentFragment;
-		}
-		
-		return function(_element) {//return MicrodataJS.fixItemElement
+		return function(_element, force) {//return MicrodataJS.fixItemElement
 			var val;
 			_element['itemScope'] = true;
-
-			// Attach the (none-live) properties attribute to the element
-			// TODO:: make properties as getter
-			_element['properties'] = getProperties(_element);
-
+			
 			if(val = _element.getAttribute("itemid"))//hasAttribute
 				_element['itemId'] = val;
 				
@@ -397,46 +553,53 @@ MicrodataJS["fixItemElement"] = (
 			if(val = _element.getAttribute("itemtype"))//hasAttribute
 				_element['itemType'] = val;
 			
+			MicrodataJS["plugins"].forEach(function(f) {
+				f(_element);
+			})
+				
+			getProperties.force = force;
+			
+			// Set getter "properties" with cache (none-live property) to the element
+			if(_element.__defineGetter__) {
+				if(!_element.__lookupGetter__('properties'))
+					_element.__defineGetter__('properties', function() {
+						return getProperties(this, getProperties.force);
+					})
+			}
+			else if(Object.defineProperty) {
+				if(!("properties" in _element))
+					Object.defineProperty(_element, "properties", {
+						get : function () {
+							return getProperties(this, getProperties.force);
+						}
+					});
+			}
+			/*else if(!("properties" in _element)) {
+				// Attach the (none-live) properties attribute to the element
+				_element['properties'] = getProperties(_element);
+			}*/
+			// else IE lt 8:: need "ielt8.Microdata-JS.plugin.js"
+			
 			return _element;
 		}
 	}
 )
 : (
 // 2. Microdata supported
-	function fixPrototypes(global) {
-		if(fixPrototypes.isfixed)return;
-		
-		var _a;
-
-		if((_a = global["DocumentFragment"]) && (_a = _a.prototype)) {//_a === global["DocumentFragment"]
-			_a["getItems"] = document["getItems"];//_a === global["DocumentFragment"].prototype
-		}
-		
-		if(!(_a = global["PropertyNodeList"])) {
-			global.addEventListener("DOMContentLoaded", fixPrototypes.bind(global, global), false),
-				global.addEventListener("load", fixPrototypes.bind(global, global), false)
-		}		
-		//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
-		//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
-		//TODO:: Check for compliance with FINALE Microdata specification.
-		else if(!("values" in (_a = _a.prototype))) {//_a === global["PropertyNodeList"]
-			_a.__defineGetter__("values", function() {//_a === global["PropertyNodeList"].prototype
-				return this["getValues"]();
-			});
-			fixPrototypes.isfixed = true;
-		}
-		
-		//TODO:: somehow return nothing when fixPrototypes function fired second time
-		return function(val) { return val }//return MicrodataJS.fixItemElement
-	}
+	fixPrototypes
 ))(global, $$, _toArray);
 })
 (
 	window,
 	/**
 	 * @param {string} selector
-	 * @param {Document|DocumentFragment} root
+	 * @param {Node|Document|DocumentFragment} root
+	 * @return {Array.<Node>}
 	 */
 	function(selector, root) {return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},//Youre own function(){return toArray(root.querySelectorAll(#selector#))} function
+	/**
+	 * @param {*} iterable value
+	 * @return {Array}
+	 */
 	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}//Youre own toArray function
 )
