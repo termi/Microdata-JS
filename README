@@ -55,15 +55,15 @@ Opera, Google Chrome, Safary, FireFox, IE8
  * required:
 	window.$A function must return array ["1", "2", "3"] for string "123"
 	window.$$ must return array
- - Add "ielt8.Microdata-JS.plugin.js" script to user page and put "Element.propery.htc" in root or edit "__PATH_TO_BEHAVIOR" var in "ielt8.Microdata-JS.plugin.js"
+ - Add "ielt8.Microdata-JS.plugin.js" script to user page and put "Element.properties.htc" in root or edit "__PATH_TO_BEHAVIOR" var in "ielt8.Microdata-JS.plugin.js"
 
 TODO:
  1. Delete code adding "getValues" property if it not compliance with FINALE Microdata specification
 
 LIMITATION:
  Opera >= 12:
-  - PropertyNodeList.value property will be available only after window.onload event
+  - PropertyNodeList.values, PropertyNodeList.toJSON and HTMLPropertiesCollection.toJSON propertys will be available only after window.onload event
  IE < 8:
-  - If you use "ielt8.Microdata-JS.plugin.js" and "Element.propery.htc" for transform "properties" property to getter, you can't use it right after MicrodataJS.fixItemElement - you need use setTimeout(dofunction, 10) to give IE time to apply behavior
+  - If you use "ielt8.Microdata-JS.plugin.js" and "Element.properties.htc" for transform "properties" property to getter, you can't use it right after MicrodataJS.fixItemElement - you need use setTimeout(dofunction, 10) to give IE time to apply behavior
  ALL OTHER and IE < 8:
-  - "properties" property no a "live" property. You need to refresh it with using MicrodataJS.fixItemElement(el, true/*<-- forse get new value of "properties" property*/)
+  - "properties" property not a "live" property. You need to refresh it manualy with using MicrodataJS.fixItemElement(el, true/*<-- forse get new value of "properties" property*/)

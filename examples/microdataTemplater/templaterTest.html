@@ -144,9 +144,26 @@ Remote teamplate test (<b style="color:red">put files for you server for work</b
 	<ul class="data">
 		<li itemprop=messages itemscope itemtype="template:chat/message">
 			<span itemprop=from.name>
-				Message from #from.name# (<span itemprop="from.nick"></span>)
+				TODO::
+				<x-if itemprop=from.name expression="from.name.length>6">
+					STATE 1 !!! :: Message from #from.name# (<span itemprop="from.nick"></span>)
+				</x-if>
+				<x-else>
+					OLOLO STATE 2 !!! :: <span itemprop="from.nick"></span> - #from.name#
+				</x-else>
 			</span>
 			<div itemprop=body>
+		</li>
+		<x-if itemprop=messages expression="messages.iteration==2">
+			<div>2</div>
+		</x-if>
+		<x-elseif itemprop=messages expression="messages.iteration%3==0">
+			<hr />
+		</x-ilseif>
+		<x-else>
+			<span>|</span>
+		</x-else>
+		
 	</ul>
 	
 	<footer>

@@ -205,7 +205,6 @@ function fixPrototypes(global) {
 		fixPrototypes.isfixed = true;
 	}
 
-	//TODO:: somehow return nothing when fixPrototypes function fired second time
 	return fixPrototypes.emptyFunction//return MicrodataJS.fixItemElement
 }
 fixPrototypes.emptyFunction = function(val) { return val };
@@ -592,14 +591,16 @@ MicrodataJS["fixItemElement"] = (
 (
 	window,
 	/**
+	 * Youre own function(){return toArray(root.querySelectorAll(#selector#))} function
 	 * @param {string} selector
 	 * @param {Node|Document|DocumentFragment} root
 	 * @return {Array.<Node>}
 	 */
-	function(selector, root) {return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},//Youre own function(){return toArray(root.querySelectorAll(#selector#))} function
+	function(selector, root) {return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},
 	/**
+	 * Youre own toArray function
 	 * @param {*} iterable value
 	 * @return {Array}
 	 */
-	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}//Youre own toArray function
-)
+	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}
+);

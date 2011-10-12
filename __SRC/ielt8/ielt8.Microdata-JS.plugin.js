@@ -1,4 +1,4 @@
-var __PATH_TO_BEHAVIOR = "Element.propery.htc";
+var __PATH_TO_BEHAVIOR = "Element.properties.htc";
 
 MicrodataJS["plugins"].push(function(el) {
 	el.style.behavior += " url(" + __PATH_TO_BEHAVIOR + ")";
