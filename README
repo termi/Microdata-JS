@@ -1,69 +1,49 @@
 Implementation of the HTMl5 Microdata specification.
 
+ + Live "properties" property (turn it on manualy window.microdata_liveProperties = true)
  + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
  + Extending DocumentFragment.prototype with getItems function
  + Extending PropertyNodeList and HTMLPropertiesCollection prototypes with toJSON functions
+ + IE < 8 support
 
 Microdata JS API
-window.MicrodataJS = {
-	/**
-	 * Returns the itemValue of an Element.
-	 * http://www.w3.org/TR/html5/microdata.html#values
-	 * or http://dev.w3.org/html5/md/#dom-itemvalue
-	 *
-	 * @param {Element} element The element to extract the itemValue for.
-	 * @return {string|Element} The itemValue of the element or Microdata Item element
-	 */
-	getItemValue : function(){...},
-	/**
-	 * Set the itemValue of an Element.
-	 * http://www.w3.org/TR/html5/microdata.html#values
-	 *
-	 * @param {Element} element The element to extract the itemValue for.
-	 * @param {string} value The itemValue of the element.
-	 * @return {string} "value" param value	 
-	 */
-	setItemValue : function() {...},
-	/**
-	 * Returns the properties for the given item.
-	 *
-	 * @param {Element} item The item for which to find the properties.
-	 * @return {HTMLPropertiesCollection} The properties for the item.
-	 */
-	getItemProperties : function() {...},
-	/**
-	 * Fix Microdata Item Element for browsers with no Microdata support
-	 * Do nothing for browsers with Microdata support
-	 *
-	 * @param {Element} element The Microdata DOM-element with 'itemScope' and 'itemtype' attributes
-	 * @return {Element}
-	 */
-	fixItemElement : function() {...},
-	/**
-	 * Returns a JSON representation of the Microdata object.
-	 * @param {Node|Array.<Node>} itemElement DOM-element or array of DOM-elements with itemscope attribute
-	 */
-	itemToJSON : function() {...}
-}
 
-Browsers support:
-Opera, Google Chrome, Safary, FireFox, IE8
+Element.itemValue
+Element.itemProp
+Element.itemScope
+Element.itemId
+Element.itemType
+Element.itemRef
+Element.properties
+window.microdata_liveProperties = 
+	true - for auto update Element.properties value
+	false (default) - for cached Element.properties value
 
- + for IE < 8 support you need toArray and querySelectorAll functions.
- - Set the window.$A to your toArray function.
- - Set the window.$$ to your function(selector, root){return toArray(root.querySelectorAll(selector))} function
- * required:
+Browsers support
+
+Opera, Google Chrome, Safary, FireFox, IE8 and IE < 8 support, and maybe others
+
+ + for IE < 8 support you need toArray and querySelectorAll functions:
+   1. Set the window.$A to your toArray function.
+   2. Set the window.$$ to your function(selector, root){return toArray(root.querySelectorAll(selector))} function
+   * required:
 	window.$A function must return array ["1", "2", "3"] for string "123"
 	window.$$ must return array
- - Add "ielt8.Microdata-JS.plugin.js" script to user page and put "Element.properties.htc" in root or edit "__PATH_TO_BEHAVIOR" var in "ielt8.Microdata-JS.plugin.js"
+   3. Add "microdata-js.ielt8.js" script to <head> section on youre page and put "microdata-js.ielt8.htc" in root or edit "__PATH_TO_BEHAVIOR" var in "microdata-js.ielt8.js"
+   4. Add js implimentation of functions below (you can get it from "a.js", "a.ielt8.js" and "a.ielt8.htc" files in examples) :
+		window.Array.prototype.filter
+		window.Array.prototype.indexOf
+		window.Array.prototype.forEach
+		window.Array.prototype.some
+		window.Function.prototype.bind
 
-TODO:
- 1. Delete code adding "getValues" property if it not compliance with FINALE Microdata specification
+TODO
 
-LIMITATION:
+ 1. Live HTMLElement.prototype without window.microdata_liveProperties option
+ 2. Improvement speed of selecting Microdata ilements in IE < 8
+ 3. Delete code adding "values" property if it not compliance with FINALE Microdata specification
+
+LIMITATION
+
  Opera >= 12:
   - PropertyNodeList.values, PropertyNodeList.toJSON and HTMLPropertiesCollection.toJSON propertys will be available only after window.onload event
- IE < 8:
-  - If you use "ielt8.Microdata-JS.plugin.js" and "Element.properties.htc" for transform "properties" property to getter, you can't use it right after MicrodataJS.fixItemElement - you need use setTimeout(dofunction, 10) to give IE time to apply behavior
- ALL OTHER and IE < 8:
-  - "properties" property not a "live" property. You need to refresh it manualy with using MicrodataJS.fixItemElement(el, true/*<-- forse get new value of "properties" property*/)

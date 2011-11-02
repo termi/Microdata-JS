@@ -1,7 +1,44 @@
 ﻿// @required(microdata)
+// @required browser.msie
+// @required $A
+// @required HTMLElement.prototype.insertAfter
 
 //closure
 ;(function(global, ajax) {
+	
+var DEBUG = !!global.DEBUG;
+
+/** 
+ * Функция "включает" в IE < 9 элементы шаблонизатора
+ */
+function template_document(doc) { // pass in a document as an argument
+	// create an array of elements IE does not support
+	var elements_array = 'x-if x-elseif x-else'.split(' '),
+	a = -1;
+
+	while (++a < elements_array.length) { // loop through array
+		doc.createElement(elements_array[a]);
+	}
+
+	return doc;
+} // critique: array could exist outside the function for improved performance?
+if(browser.msie && browser.msie < 9)template_document(document);
+
+//Исправляем для IE<9 создание DocumentFragment, для того, чтобы функция работала с элементами шаблонизатора
+if(browser.msie && browser.msie < 9) {
+	var msie_CreateDocumentFragment = function() {
+		var df = msie_CreateDocumentFragment.orig.call(this);
+		return template_document(df);
+	}
+	msie_CreateDocumentFragment.orig = document.createDocumentFragment;
+	
+	document.createDocumentFragment = msie_CreateDocumentFragment;
+	
+	// Обновляем функции cloneElement
+	cloneElement.ielt9Refresh();
+}
+
+
 
 /**
  * @constructor
@@ -18,8 +55,8 @@ function Variable(_name, _value, _getter, _setter) {
 		if(newVal !== false)_value = newVal;
 		return _value;
 	}
-	thisObj.get = function(params) {
-		return _getter ? _getter(_value, params) : _value;
+	thisObj.get = function() {
+		return _getter ? _getter.apply(thisObj, [_value].concat($A(arguments))) : _value;
 	}
 }
 /**
@@ -77,7 +114,8 @@ global.microdataTemplate = new function() {
 		if(!fullSrc)return false;
 		
 		var el, _src = fullSrc.split("#"), _el, i = 0,
-			isUrl = /(((ht|f)tp(s?)\:\/\/){1}\S+)/.test(_src[0]);
+			//isUrl = /(((ht|f)tp(s?)\:\/\/){1}\S+)/.test(_src[0]);
+			isUrl = /\w+:(\/\/)?[\w][\w.\/]*/.test(_src[0]);
 		
 		//for tests
 		_src[0] = _src[0] + "?" + randomString(3);
@@ -91,9 +129,7 @@ global.microdataTemplate = new function() {
 				
 				while(_el = el.childNodes[i++])
 					element.appendChild(cloneElement(_el));
-			
-				global.MicrodataJS.fixItemElement(element);
-				
+							
 				_callback();
 			}
 		}
@@ -230,7 +266,7 @@ global.microdataTemplate = new function() {
 			}
 		}
 		else {
-			if(itemprop && ~(element.getAttribute(attrFrom)||"").indexOf("#" + itemprop + "#")) {
+			if(itemprop && ~(element.getAttribute(attrFrom) || "").indexOf("#" + itemprop + "#")) {
 				element[attrTo] = element.getAttribute(attrFrom).replace("#" + itemprop + "#", value);
 				if(element.getAttribute(attrTo) !== null)element.setAttribute(attrTo, element[attrTo]);
 			}
@@ -242,7 +278,8 @@ global.microdataTemplate = new function() {
 
 /* PUBLICK */
 	/** Установим значение одного property
-	 * @param {string} */
+	 * @param {(Element|Node)} element DOM-элемент - Microdata item
+	 * @param {string} propertyName  */
 	thisObj.setProperty = function(element, propertyName, data, forse) {
 		var /** @type {Array.<string>} */
 			propertyNames,
@@ -274,7 +311,11 @@ global.microdataTemplate = new function() {
 			curProp_value_isArray = false;
 			
 			//Проверим, не хотим ли мы принудительно привести к массиву
-			if(propertyName.substr(-2) === "[]")curProp_value_isArray = true, propertyName = propertyName.substring(0, propertyName.length - 2);
+			if(propertyName.substr(-2) === "[]") {
+				curProp_value_isArray = true;
+				propertyName = propertyName.substring(0, propertyName.length - 2);
+				if((tempStr = element.getAttribute("itemprop") || "").substr(-2) === "[]")element.setAttribute("itemprop", tempStr.substr(0, tempStr.length - 2));
+			}
 			
 			props = propertyName.split(".");
 			
@@ -286,7 +327,7 @@ global.microdataTemplate = new function() {
 				props = props[0].split(".");
 				if(props[1]) {
 					curProp_value = _variables[props[1]];
-					if(curProp_value)curProp_value = curProp_value.get(curProp_value.parseParams(tempStr));
+					if(curProp_value)curProp_value = curProp_value.get(curProp_value.parseParams(tempStr), element);
 					i = props.length + 1;
 				}
 				else curProp_value = null;
@@ -317,8 +358,7 @@ global.microdataTemplate = new function() {
 							return;
 						}
 						
-						el = insertAfter(
-							element.parentNode, 
+						el = element.parentNode.insertAfter(
 							cloneElement(element),
 							element._lastInsertedNode || element);
 							
@@ -342,8 +382,8 @@ global.microdataTemplate = new function() {
 		}
 		
 		if(Array.isArray(data) || (itemElement.getAttribute("itemprop") || "").substr(-2) === "[]") {
-			var first = true, el;
-			$A(data).forEach(function(curData) {//Принудительно преведём к массиву и пробежимся по нему
+			var first = true, el, _itemprop;
+			$A(data).forEach(function(curData) {//Принудительно приведём к массиву и пробежимся по нему
 				if(first) {
 					itemElement.__templateElement__ = _documentFragment.appendChild(cloneElement(itemElement));
 					thisObj.setItem(itemElement, curData, forse);
@@ -351,41 +391,35 @@ global.microdataTemplate = new function() {
 					first = false;
 					return;
 				}
-				el = insertAfter(
-					itemElement.parentNode, 
+				el = itemElement.parentNode.insertAfter(
 					cloneElement(itemElement.__templateElement__),
 					itemElement._lastInsertedNode || itemElement);
 					
 				el.__templateElement__ = itemElement.__templateElement__;
 				thisObj.setItem(el, curData, forse);
 			})
+			
+			if((_itemprop = itemElement.getAttribute("itemprop") || "").substr(-2) === "[]")itemElement.setAttribute("itemprop", _itemprop.substr(0, _itemprop.length - 2));
+			
 			return;
 		}
-
-		//Для старых браузеров: пофиксим Microdata-элемент
-		itemElement = global.MicrodataJS.fixItemElement(itemElement);
 		
 		//thisObj.setProperty(itemElement, "", data, forse);
-		
-		function doit() {
-			$A(itemElement.properties.names).forEach(function(name) {
-				$A(itemElement.properties[name]).forEach(function(DOMElement) {
+
+		if(itemElement.properties){
+			$A(itemElement.properties).forEach(function(DOMElement) {
+				$A(DOMElement.itemProp).forEach(function(name) {
 					if(DOMElement.getAttribute("itemscope") != null && data[name]) {
 						thisObj.setItem(DOMElement, data[name], forse);
 					}
 					else {
 						thisObj.setProperty(DOMElement, name, data[name.split(".")[0]], forse);
 					}
-				})
-			});
-		};
-		
-		if(itemElement.properties)doit();
+				});
+			})
+		}
 		else {
-			// --- TEMPORARY ---
-			//IE < 8 need some time to apply Element.propery.htc behavior
-			//TODO:: do better
-			setTimeout(doit, 10);
+			if(DEBUG)Log.err("The is no 'properties' property in element")
 		}
 	}
 	
@@ -401,9 +435,24 @@ global.microdataTemplate = new function() {
 		_documentFragment = document.createDocumentFragment();
 		_documentFragment._URL_CACHE = [];
 		
-		thisObj.registerVariable("date", null, function(val, params) {
-			var _format = typeof params == "string" ? params : params && params["format"],
+		thisObj.registerVariable("date", null, function(val, params, DOMElement) {
+			var _format,
+				_update,
 				result = new Date();
+		
+			if(typeof params == "string")_format = params;
+			else if(params) {
+				_format = params["format"];
+				_update = params["update"];
+			}
+			
+			/* Just proof of contecept
+				TODO::
+			if(_update && !isNaN(_update) && DOMElement) {
+				setInterval(function() {
+					DOMElement.itemValue = _format && (result = new Date()).format ? result.format(_format) : result + "";
+				}, _update++)
+			}*/
 			
 			return _format && result.format ? result.format(_format) : result + "";
 		}, function (){return false});
@@ -412,7 +461,7 @@ global.microdataTemplate = new function() {
 	}
 }
 
-})(window, {
+})(window, {// ajax object
 	send : function(url, onload, onerror) {
 		SendRequest(url, "", onload, onerror);
 	}

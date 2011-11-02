@@ -2,7 +2,7 @@
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // @warning_level VERBOSE
 // @jscomp_warning missingProperties
-// @output_file_name default.js
+// @output_file_name microdata-js.js
 // @check_types
 // ==/ClosureCompiler==
 /*
@@ -16,105 +16,15 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.5
+ * @version 2.5.2
+ * 
+ * @requared:
+ *  1. Utils.Dom.DOMException (DOMException like error)
+ *  2. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
+ *  3. Object.addProperty and Object.addProperties
  */
 
 ;(function(global, $$, _toArray) {
-
-// ---=== MicrodataJS API ===---
-var MicrodataJS = global["MicrodataJS"] = {
-	/**
-	 * Returns the itemValue of an Element.
-	 * http://www.w3.org/TR/html5/microdata.html#values
-	 * or http://dev.w3.org/html5/md/#dom-itemvalue
-	 *
-	 * @param {Element} element The element to extract the itemValue for.
-	 * @return {string|Node} The itemValue of the element or Microdata Item element
-	 */
-	"getItemValue" : function(element) {
-		var elementName = element.nodeName;
-
-		return element.getAttribute("itemscope") !== null ? element :
-			elementName === "META" ? element.content :
-			~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName) ? element.src :
-			~["A","AREA","LINK"].indexOf(elementName) ? element.href :
-			elementName === "OBJECT" ? element.data :
-			elementName === "TIME" && element.getAttribute("datetime") ? element.dateTime ://TODO:: Check element.dateTime in IE[7,6]
-			"textContent" in element ? element.textContent :
-				element.innerText;//IE-only fallback
-	},
-	/**
-	 * Set the itemValue of an Element.
-	 * http://www.w3.org/TR/html5/microdata.html#values
-	 *
-	 * @param {Element} element The element to extract the itemValue for.
-	 * @param {string} value The itemValue of the element.
-	 * @return {string} "value" param value
-	 */
-	"setItemValue" : function(element, value) {
-		var elementName = element.nodeName;
-
-		return element[
-			elementName === 'META' ? "content" :
-			~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName) ? "src" :
-			~['A', 'AREA', 'LINK'].indexOf(elementName) ? "href" :
-			elementName === 'OBJECT' ? "data" :
-			elementName === 'TIME' && element.getAttribute('datetime') ? "dateTime" ://TODO:: Check element.dateTime in IE[7,6]
-			"innerHTML"] = value;
-	},	
-	/**
-	 * [Default value]
-	 * Returns the properties for the given item.
-	 *
-	 * @param {Element} item The item for which to find the properties.
-	 * @return {HTMLPropertiesCollection} The properties for the item.
-	 */
-	"getItemProperties" : function(item) {
-		return item["properties"]
-	},
-	/**
-	 * @type {Array.<Function>}
-	 */
-	"plugins" : [],
-	/**
-	 * Returns a JSON representation of the Microdata object.
-	 * @param {Node|Array.<Node>} itemElement DOM-element or array of DOM-elements with itemscope attribute
-	 * @return {Object}
-	 */
-	"itemToJSON" : function itemToJSON(itemElement) {
-		var result,
-			i = -1,
-			cur;
-		
-		if(itemElement.length !== undefined) {
-			result = {"items" : []};
-			
-			while(cur = itemElement[++i]) {
-				if(cur.getAttribute("itemscope") !== null)
-					result["items"].push(itemToJSON(cur))
-			}
-			
-			return result;
-		}
-		
-		if(itemElement.getAttribute("itemscope") !== null) {
-			result = {};
-			
-			var val;
-			
-			if(val = itemElement.getAttribute("itemid"))
-				result['id'] = val;
-
-			if(val = itemElement.getAttribute("itemtype"))
-				result['type'] = val;
-			
-			result["properties"] = itemElement["properties"].toJSON();
-		}
-		
-		return result;
-	}
-};
-
 
 function fixPrototypes(global) {
 	if(fixPrototypes.isfixed)return;
@@ -178,12 +88,12 @@ function fixPrototypes(global) {
 				i = -1,
 				cur;
 			
-			while(cur = values[++i]) {
-				if(cur instanceof Element)
+			while(cur = values[++i])
+				if(cur instanceof Element) {
 					cur = MicrodataJS["itemToJSON"](cur);//if cur is not Microdata element return undefined
 				
-				cur && result.push(cur);
-			}
+					cur && result.push(cur);
+				}
 			
 			return result;
 		}
@@ -195,19 +105,16 @@ function fixPrototypes(global) {
 				i = -1,
 				cur;
 			
-			while(cur = names[++i])if(thisObj[cur] instanceof PropertyNodeList) {
-				result[cur] = thisObj[cur].toJSON();
-			}
+			while(cur = names[++i])
+				if(thisObj[cur] instanceof PropertyNodeList)
+					result[cur] = thisObj[cur].toJSON();
 		
 			return result;
 		}
 	
 		fixPrototypes.isfixed = true;
 	}
-
-	return fixPrototypes.emptyFunction//return MicrodataJS.fixItemElement
 }
-fixPrototypes.emptyFunction = function(val) { return val };
 
 /**
  * Fix Microdata Item Element for browsers with no Microdata support
@@ -216,7 +123,7 @@ fixPrototypes.emptyFunction = function(val) { return val };
  * @param {boolean} force Force to clean cached "properties" value and get newest "properties" value
  * @return {Element}
  */
-MicrodataJS["fixItemElement"] = (
+(
 !document["getItems"] ? (
 // 1. Microdata unsupported
 	/**
@@ -225,6 +132,10 @@ MicrodataJS["fixItemElement"] = (
 	 * @param {!Function} _toArray Function must return an Array representation of the enumeration.
 	 */
 	function(global, $$, _toArray) {
+		//import
+		var DOMException_ = global["Utils"]["Dom"]["DOMException"],
+			DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
+		
 		if(!global["PropertyNodeList"]) {
 		// --- === PropertyNodeList CLASS [BEGIN] === ---
 		/**
@@ -243,7 +154,7 @@ MicrodataJS["fixItemElement"] = (
 		 * Non-standart (not in native PropertyNodeList class) method
 		 * @param {Element} newNode DOM-element to add
 		 */
-		PropertyNodeList.prototype._push = function(newNode, prop_value) {
+		PropertyNodeList.prototype["_push"] = function(newNode, prop_value) {
 			var thisObj = this;
 			
 			thisObj[thisObj["length"]++] = newNode;
@@ -315,7 +226,7 @@ MicrodataJS["fixItemElement"] = (
 		 * @param {string|Node} prop_value Microdata-property value
 		 * @param {string} name Microdata-property name
 		 */
-		HTMLPropertiesCollection.prototype._push = function(newNode, prop_value, name) {
+		HTMLPropertiesCollection.prototype["_push"] = function(newNode, prop_value, name) {
 			var thisObj = this;
 			
 			thisObj[thisObj["length"]++] = newNode;
@@ -326,7 +237,7 @@ MicrodataJS["fixItemElement"] = (
 			
 			(
 				thisObj[name] || (thisObj[name] = new PropertyNodeList())
-			)._push(newNode, prop_value);
+			)["_push"](newNode, prop_value);
 		}
 		/**
 		 * @param {string} p_name property name
@@ -356,6 +267,247 @@ MicrodataJS["fixItemElement"] = (
 	// --- === HTMLPropertiesCollection CLASS [END] === ---
 		}
 
+
+		// ------- Extending Element.prototype ---------- //
+		// For IE < 8 support use microdata-js.ielt8.js and microdata-js.ielt8.htc
+
+		// Definition IF < 8 support
+		var _HTMLElement_prototype = (global["HTMLElement"] && global["HTMLElement"].prototype || /*ie8*/global["Element"] && global["Element"].prototype);
+		if(_HTMLElement_prototype)Object["addProperties"](_HTMLElement_prototype, {
+			"itemValue" : {
+				"get" : function() {
+					var element = this,
+						elementName = element.nodeName;
+
+					return element.getAttribute("itemscope") !== null ? element :
+						element.getAttribute("itemprop") === null ? null :
+						elementName === "META" ? element.content :
+						~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'].indexOf(elementName) ? element.src :
+						~["A","AREA","LINK"].indexOf(elementName) ? element.href :
+						elementName === "OBJECT" ? element.data :
+						elementName === "TIME" && element.getAttribute("datetime") ? element.dateTime ://TODO:: Check element.dateTime in IE[7,6]
+						"textContent" in element ? element.textContent :
+							element.innerText;//IE-only fallback
+				},
+				"set" : function(value) {
+					var element = this,
+						elementName = element.nodeName;
+
+					if(element.getAttribute("itemprop") === null) {
+						throw new DOMException_("INVALID_ACCESS_ERR");
+					}
+
+					return element[
+						elementName === 'META' ? "content" :
+						~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'].indexOf(elementName) ? "src" :
+						~['A', 'AREA', 'LINK'].indexOf(elementName) ? "href" :
+						elementName === 'OBJECT' ? "data" :
+						elementName === 'TIME' && element.getAttribute('datetime') ? "dateTime" ://TODO:: Check element.dateTime in IE[7,6]
+						"innerHTML"] = value;
+				}
+			},
+			"itemProp" : {
+				"get" : function() {
+					var itempropValue = this.getAttribute("itemprop"),
+						thisObj = this;
+					
+					if(!thisObj._lastitemprop) {
+						thisObj._lastitemprop = new DOMStringCollection_(itempropValue, function() {
+							thisObj.setAttribute("itemprop", this + "");
+						});
+					}
+					else if(itempropValue !== null && thisObj._lastitemprop + "" !== itempropValue) {
+						thisObj._lastitemprop.update(itempropValue);
+					}
+					
+					return thisObj._lastitemprop;
+				},
+				"set" : function(val) {
+					return this.setAttribute("itemprop", val)
+				}
+			},
+			"itemScope" : {
+				"get" : function() {
+					return this.getAttribute("itemscope") !== null
+				}, 
+				"set" : function(val) {
+					val ? this.setAttribute("itemscope", "") : this.removeAttribute("itemscope");
+					
+					//val === true && MicrodataJS.fixItemElement(this);
+					
+					return val;
+				}
+			},
+			"itemId" : {
+				"get" : function() {
+					var val = (this.getAttribute("itemid") || "").trim();
+					
+					if(val && !/\w+:(\/\/)?[\w][\w.\/]*/.test(val))val = location.href.replace(/\/[^\/]*$/, "/" + escape(val));
+					
+					return val;
+				},
+				"set" : function(val) {
+					return this.setAttribute("itemid", val + "")
+				}
+			},
+			"itemType" : {
+				"get" : function() {
+					return (this.getAttribute("itemtype") || "")
+				},
+				"set" : function(val) {
+					return this.setAttribute("itemtype", val + "")
+				}
+			},
+			"itemRef" : {
+				"get" : function() {
+					var itemrefValue = this.getAttribute("itemref"),
+						thisObj = this;
+					
+					if(!thisObj._lastitemref) {
+						thisObj._lastitemref = new DOMStringCollection_(itemrefValue, function() {
+							thisObj.setAttribute("itemref", this + "");
+						});
+					}
+					else if(itemrefValue !== null && thisObj._lastitemref + "" !== itemrefValue) {
+						thisObj._lastitemref.update(itemrefValue);
+					}
+					
+					return thisObj._lastitemref;
+					
+				},
+				"set" : function(val) {
+					return this.setAttribute("itemref", val + "")
+				}
+			},
+			"properties" : {
+				"get" : function() {
+					var item = this;
+					
+					var properties = item["__properties_CACHE__"];
+					
+					if(properties) {
+						if(!global["microdata_liveProperties"])return properties;
+						else properties._clear();
+					}
+					else properties = item["__properties_CACHE__"] = new HTMLPropertiesCollection();
+					
+					var root = item,
+						pending = [],
+						props = [],
+						references = [],
+						children,
+						current;
+
+					_toArray(root.childNodes).forEach(function(el) {
+						if(el.nodeType === 1)pending.push(el)
+					});
+					
+					if(root.getAttribute("itemref")) {
+						references = root.getAttribute("itemref").trim().split(/\s+/);
+
+						references.forEach(function(reference) {
+							var element = document.getElementById(reference);
+
+							if(element)pending.push(element);
+						});
+					}
+
+					pending = pending.filter(function(candidate, index) {
+						var scope = null,
+							parent = candidate,
+							ancestors = [];
+
+						// Remove duplicates
+						if (pending.indexOf(candidate) !== index &&
+							pending.indexOf(candidate, index) !== -1)
+							return false;
+
+						while((parent = parent.parentNode) !== null && parent.nodeType === 1) {
+							ancestors.push(parent);
+							if(parent.getAttribute("itemscope") !== null) {
+								scope = parent;
+								break;
+							}
+						}
+
+						if (scope !== null) {
+							// If one of the other elements in pending is an ancestor element of
+							// candidate, and that element is scope, then remove candidate from
+							// pending.
+							if (pending.indexOf(scope) !== -1)return false;
+
+							// If one of the other elements in pending is an ancestor element of
+							// candidate, and either scope is null or that element also has scope
+							// as its nearest ancestor element with an itemscope attribute
+							// specified, then remove candidate from pending.
+							return !ancestors.some(function(ancestor) {
+								var elementIndex = -1,
+									elementParent,
+									elementScope = null;
+
+								// If ancestor is in pending
+								if ((elementIndex = pending.indexOf(ancestor)) !== -1) {
+									elementParent = pending[elementIndex];
+
+									// Find the nearest ancestor element with an itemscope attribute
+									while((elementParent = elementParent.parentNode) !== null &&
+										   elementParent.nodeType === 1) {
+										if (elementParent.getAttribute("itemscope") !== null) {
+											elementScope = elementParent;
+											break;
+										}
+									}
+									// The nearest ancestor element equals scope
+									if (elementScope === scope)return true;
+								}
+								return false;
+							});
+						}
+						
+						return true;
+					});
+
+					pending.sort(function(a, b) {
+						return 3 - (compareDocumentPosition(b, a) & 6);
+					});
+
+					while((current = pending.pop())) {
+						if(current.getAttribute("itemprop")) {
+							props.push(current);
+						}
+						
+						if (current.getAttribute("itemscope") === null) {
+							// Push all the child elements of current onto pending, in tree order
+							// (so the first child of current will be the next element to be
+							// popped from pending).
+							children = _toArray(current.childNodes).reverse();
+							children.forEach(function(child) {
+								if (child.nodeType === 1)pending.push(child);
+							});
+						}
+					}
+							
+					
+					props.forEach(function(property) {
+						//The itemprop attribute, if specified, must have a value that is an unordered set of unique space-separated tokens representing the names of the name-value pairs that it adds. The attribute's value must have at least one token.
+						$A(property["itemProp"])
+							.forEach(properties["_push"].bind(properties, property, property["itemValue"]));
+					});
+
+					return properties;
+				}
+					
+					
+			}
+		});
+		
+		//[BUG] Prevent bug in Google Chrome:: setter do not fire on first created EMBED element
+		try {
+			var EMBED = document.createElement("EMBED");
+			EMBED.itemValue = EMBED.itemValue + "123";
+		}
+		catch(e) {}
+
 		/**
 		 * Compares the document position of two elements.
 		 * MIT Licensed, John Resig: http://ejohn.org/blog/comparing-document-position/
@@ -377,150 +529,18 @@ MicrodataJS["fixItemElement"] = (
 		};
 		
 		/**
-		 * Returns the properties for the given item.
-		 *
-		 * @param {Element} item The item for which to find the properties.
-		 * @return {HTMLPropertiesCollection} The properties for the item.
-		 */
-		var getProperties = MicrodataJS["getItemProperties"] = function(item, force) {
-			var properties = item["__properties_CACHE__"];
-			
-			if(properties) {
-				if(!force)return properties;
-				else properties._clear();
-			}
-			else properties = item["__properties_CACHE__"] = new HTMLPropertiesCollection();
-			
-			var root = item,
-				pending = [],
-				props = [],
-				references = [],
-				children,
-				current;
-
-			_toArray(root.childNodes).forEach(function(el) {
-				if(el.nodeType === 1)pending.push(el)
-			});
-			
-			if(root.getAttribute("itemref")) {
-				references = root.getAttribute("itemref").trim().split(/\s+/);
-
-				references.forEach(function(reference) {
-					var element = document.getElementById(reference);
-
-					if(element)pending.push(element);
-				});
-			}
-
-			pending = pending.filter(function(candidate, index) {
-				var scope = null,
-					parent = candidate,
-					ancestors = [];
-
-				// Remove duplicates
-				if (pending.indexOf(candidate) !== index &&
-					pending.indexOf(candidate, index) !== -1)
-					return false;
-
-				while((parent = parent.parentNode) !== null && parent.nodeType === 1) {
-					ancestors.push(parent);
-					if(parent.getAttribute("itemscope") !== null) {
-						scope = parent;
-						break;
-					}
-				}
-
-				if (scope !== null) {
-					// If one of the other elements in pending is an ancestor element of
-					// candidate, and that element is scope, then remove candidate from
-					// pending.
-					if (pending.indexOf(scope) !== -1)return false;
-
-					// If one of the other elements in pending is an ancestor element of
-					// candidate, and either scope is null or that element also has scope
-					// as its nearest ancestor element with an itemscope attribute
-					// specified, then remove candidate from pending.
-					return !ancestors.some(function(ancestor) {
-						var elementIndex = -1,
-							elementParent,
-							elementScope = null;
-
-						// If ancestor is in pending
-						if ((elementIndex = pending.indexOf(ancestor)) !== -1) {
-							elementParent = pending[elementIndex];
-
-							// Find the nearest ancestor element with an itemscope attribute
-							while((elementParent = elementParent.parentNode) !== null &&
-								   elementParent.nodeType === 1) {
-								if (elementParent.getAttribute("itemscope") !== null) {
-									elementScope = elementParent;
-									break;
-								}
-							}
-							// The nearest ancestor element equals scope
-							if (elementScope === scope)return true;
-						}
-						return false;
-					});
-				}
-				
-				return true;
-			});
-
-			pending.sort(function(a, b) {
-				return 3 - (compareDocumentPosition(b, a) & 6);
-			});
-
-			while((current = pending.pop())) {
-				if(current.getAttribute("itemprop")) {
-					props.push(current);
-
-					if(current.getAttribute("itemscope") !== null) {
-						current['itemScope'] = true;
-						MicrodataJS["fixItemElement"](current);
-					}
-				}
-				
-				if (current.getAttribute("itemscope") === null) {
-					// Push all the child elements of current onto pending, in tree order
-					// (so the first child of current will be the next element to be
-					// popped from pending).
-					children = _toArray(current.childNodes).reverse();
-					children.forEach(function(child) {
-						if (child.nodeType === 1)pending.push(child);
-					});
-				}
-			}
-					
-			
-			props.forEach(function(property) {
-				var p_names = property.getAttribute("itemprop").split(" "),
-					prop_value = MicrodataJS["getItemValue"](property);
-				
-				property["itemValue"] = prop_value;
-				//The itemprop attribute, if specified, must have a value that is an unordered set of unique space-separated tokens representing the names of the name-value pairs that it adds. The attribute's value must have at least one token.
-				(property["itemProp"] = p_names)			
-					.forEach(properties._push.bind(properties, property, prop_value));
-			});
-
-			return properties;
-		}
-		
-		/**
 		 * Gets all of the elements that have an itemType
 		 * @param {string} itemTypes - whitespace-separated string of types to match
 		 * @this {Document|DocumentFragment}
 		 */
 		document["getItems"] = function (itemTypes) {
-			itemTypes = itemTypes || "";//default value
+			itemTypes = (itemTypes || "").trim();//default value
 			
-			var __getItemsCACHE__ = this["__getItemsCACHE__"] || (this["__getItemsCACHE__"] = {}),
-				items = __getItemsCACHE__[itemTypes] || 
-					(__getItemsCACHE__[itemTypes] = $$("[itemscope]", this)),
+			var items = 
+					(browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
+						$$("[itemscope]", this),
 				matches = [],
 				_itemTypes = (itemTypes || "").trim().split(/\s+/);
-			
-			if(_itemTypes.length > 1)for(var j = 0, l1 = _itemTypes.length ; j < l1 ; ++j)__getItemsCACHE__[_itemTypes[j]] = items;
 			
 			for(var i = 0, l = items.length ; i < l ; ++i) {
 				var node = items[i],
@@ -529,7 +549,7 @@ MicrodataJS["fixItemElement"] = (
 				if((!itemTypes || ~_itemTypes.indexOf(type)) &&
 					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 					(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
-					matches.push(MicrodataJS["fixItemElement"](node));
+					matches.push(node);
 				}
 			}
 			
@@ -538,55 +558,14 @@ MicrodataJS["fixItemElement"] = (
 		
 		//Fixing
 		fixPrototypes(global);
-		
-		return function(_element, force) {//return MicrodataJS.fixItemElement
-			var val;
-			_element['itemScope'] = true;
-			
-			if(val = _element.getAttribute("itemid"))//hasAttribute
-				_element['itemId'] = val;
-				
-			if(val = _element.getAttribute("itemref"))//hasAttribute
-				_element['itemRef'] = val;
-
-			if(val = _element.getAttribute("itemtype"))//hasAttribute
-				_element['itemType'] = val;
-			
-			MicrodataJS["plugins"].forEach(function(f) {
-				f(_element);
-			})
-				
-			getProperties.force = force;
-			
-			// Set getter "properties" with cache (none-live property) to the element
-			if(_element.__defineGetter__) {
-				if(!_element.__lookupGetter__('properties'))
-					_element.__defineGetter__('properties', function() {
-						return getProperties(this, getProperties.force);
-					})
-			}
-			else if(Object.defineProperty) {
-				if(!("properties" in _element))
-					Object.defineProperty(_element, "properties", {
-						get : function () {
-							return getProperties(this, getProperties.force);
-						}
-					});
-			}
-			/*else if(!("properties" in _element)) {
-				// Attach the (none-live) properties attribute to the element
-				_element['properties'] = getProperties(_element);
-			}*/
-			// else IE lt 8:: need "ielt8.Microdata-JS.plugin.js"
-			
-			return _element;
-		}
 	}
 )
 : (
 // 2. Microdata supported
 	fixPrototypes
-))(global, $$, _toArray);
+)
+)
+(global, $$, _toArray)
 })
 (
 	window,

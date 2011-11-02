@@ -8,14 +8,22 @@
 <!--[if lt IE 9]>
 <script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
 <![endif]-->
-<script src=a.js?1></script><!-- Only for $$ and toArray functions -->
-<script src=Date.prototype.format.js></script>
-<script src=../../__SRC/microdata-js.js?3></script>
-<script src=../../__SRC/ielt8/ielt8.Microdata-JS.plugin.js></script>
+<script src=../../libs/a.js></script><!-- es5-shim and $$, $A(toArray) functions -->
+<script src=../../microdata-js.js?4></script>
+<!--[if lt IE 8]>
+<script src="../../libs/a.ielt8.js"></script>
+<script src="../../microdata-js.ielt8.js"></script>
+<![endif]-->
+<script src="Date.prototype.format.js"></script>
 <!--script src=../../__SRC/microdata-js.js></script-->
-<script src=microdataTemplater.js?3></script>
+<script src=microdataTemplater.js?4></script>
 <script>
 window.onload = function() {
+	
+	
+	var global = window;
+	
+	
 	function _isEmptyElement(element) {
 		var isEmpty = !element.firstChild, i = 0;
 		
@@ -109,11 +117,11 @@ window.onload = function() {
 
 
 
-<section itemscope itemtype="template:chat">
+<section itemscope itemtype="template:chat" id=test>
 	<header>
 		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id GLOBAL.date?format=HHMMss","source":"data-src"}' data-src="i/av/#account.id#.jpg?#GLOBAL.date#" alt=Аватара>
 		<p><span itemprop=account.name></span> (<span itemprop=account.nick></span>)
-		<p itemprop=create_date data-tmpl-options='{"itemprop":"GLOBAL.date?format=dd_mm_yy_HH:MM:ss"}'>
+		<p itemprop=create_date data-tmpl-options='{"itemprop":"GLOBAL.date?format=dd_mm_yy_HH:MM:ss&update=1000"}'>
 	</header>
 	
 	<ul class="data">
@@ -159,7 +167,7 @@ Remote teamplate test (<b style="color:red">put files for you server for work</b
 		</x-if>
 		<x-elseif itemprop=messages expression="messages.iteration%3==0">
 			<hr />
-		</x-ilseif>
+		</x-elseif>
 		<x-else>
 			<span>|</span>
 		</x-else>

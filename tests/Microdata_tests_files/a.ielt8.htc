@@ -1,0 +1,62 @@
+<PUBLIC:COMPONENT lightWeight="true">
+<PUBLIC:PROPERTY NAME="classList" GET="getClassList" />
+<PUBLIC:PROPERTY NAME="attributes" GET="getAttributes" />
+<PUBLIC:PROPERTY NAME="firstElementChild" GET="getFirstElementChild" />
+<PUBLIC:PROPERTY NAME="lastElementChild" GET="getLastElementChild" />
+<PUBLIC:PROPERTY NAME="nextElementSibling" GET="getNextElementSibling" />
+<PUBLIC:PROPERTY NAME="previousElementSibling" GET="getPreviousElementSibling" />
+<PUBLIC:METHOD NAME="insertAfter" />
+<SCRIPT>
+//@required window.Utils.Dom.DOMStringCollection
+
+if(!this._)this._={};
+
+//attributes property start
+this._.__ielt8_attributes__=this.attributes;
+
+function getAttributes(){
+var tmp=this._.__ielt8_attributes__,res={};
+for(var i=0,l=tmp.length,k=0;i<l;i++)if(tmp[i].specified) {
+res[k++]=tmp[i];
+res[tmp[i].name]=tmp[i];
+}
+return res;
+}
+//attributes property end
+
+function getClassList(){
+var thisObj=this;
+if(!thisObj._._cachedClassList)thisObj._._cachedClassList=new window.Utils.Dom.DOMStringCollection(thisObj.getAttribute("class"),function(){
+//thisObj.setAttribute("class", this.value);
+thisObj.className=this.value;
+})
+return thisObj._._cachedClassList;
+}
+
+function getFirstElementChild(){
+var node = this.firstChild;
+while(node&&node.nodeType!=1)node=node.nextSibling;
+return node;
+}
+
+function getLastElementChild(){
+var node = this.lastChild;
+while(node&&node.nodeType!=1)node=node.previousSibling;
+return node;
+}
+
+function getNextElementSibling(){
+var node=this;
+while(node=node.nextSibling)if(node.nodeType==1)break;
+return node;
+}
+
+function getPreviousElementSibling(){
+var node=this;
+while(node=node.previousSibling)if(node.nodeType==1)break;
+return node;
+}
+
+function insertAfter(a,b){return this.insertBefore(a,b.nextSibling)}
+</SCRIPT>
+</PUBLIC:COMPONENT>
