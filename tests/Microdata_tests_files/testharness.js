@@ -366,7 +366,10 @@ policies and contribution forms [3].
 
     function on_event(object, event, callback)
     {
-      object.addEventListener(event, callback, false);
+		if (window.addEventListener)
+			window.addEventListener(event, callback, false);
+		else if (window.attachEvent)
+			window.attachEvent(event, callback);
     }
 
     expose(test, 'test');
@@ -1257,7 +1260,11 @@ policies and contribution forms [3].
         }
 
         if (script_prefix != null) {
-            var stylesheet = output_document.createElementNS(xhtml_ns, "link");
+            var stylesheet;
+			if(output_document.createElementNS)
+				stylesheet = output_document.createElementNS(xhtml_ns, "link")
+			else stylesheet = output_document.createElement("link")
+			
             stylesheet.setAttribute("rel", "stylesheet");
             stylesheet.setAttribute("href", script_prefix + "testharness.css");
             var heads = output_document.getElementsByTagName("head");
@@ -1309,7 +1316,8 @@ policies and contribution forms [3].
 
         log.appendChild(render(summary_template, {num_tests:tests.length}, output_document));
 
-        forEach(output_document.querySelectorAll("section#summary label"),
+		//[CHANGE | ADD egor|02.11.11]
+        forEach(output_document.querySelectorAll ? output_document.querySelectorAll("section#summary label") : $$("section#summary label", output_document),
                 function(element)
                 {
                     on_event(element, "click",
@@ -1324,7 +1332,11 @@ policies and contribution forms [3].
                                  var style_element = output_document.querySelector("style#hide-" + result_class);
                                  var input_element = element.querySelector("input");
                                  if (!style_element && !input_element.checked) {
-                                     style_element = output_document.createElementNS(xhtml_ns, "style");
+									 
+									 if(output_document.createElementNS)
+										 style_element = output_document.createElementNS(xhtml_ns, "style")
+									 else style_element = output_document.createElement("style")
+									 
                                      style_element.id = "hide-" + result_class;
                                      style_element.innerHTML = "table#results > tbody > tr."+result_class+"{display:none}";
                                      output_document.body.appendChild(style_element);
@@ -1517,7 +1529,12 @@ policies and contribution forms [3].
      }
      else
      {
-         var element = output_document.createElementNS(xhtml_ns, template[0]);
+         var element;
+		 
+		 if(output_document.createElementNS)
+			 element = output_document.createElementNS(xhtml_ns, template[0])
+		 else element = output_document.createElement(template[0])
+		 
          for (var name in template[1]) {
              if (template[1].hasOwnProperty(name))
              {
@@ -1628,16 +1645,60 @@ policies and contribution forms [3].
         Array.prototype.push.apply(array, items);
     }
 
-    function forEach (array, callback, thisObj)
-    {
-        for (var i=0; i<array.length; i++)
-        {
-            if (array.hasOwnProperty(i))
-            {
-                callback.call(thisObj, array[i], i, array);
-            }
-        }
-    }
+	//[CHANGE | ADD egor|02.11.11]
+	function toArray(iterable, start, end, forse) {
+		if(!iterable || start + end === 0)return [];
+		start = start || 0;//Default value
+		end = end || 0;//Default value
+		
+		var type = typeof iterable, results, trySlice = true,
+			//args потому, что IE не понимает, когда в функцию Array::slice передают undefined вместо start и/или end
+			args = [start];
+		if(end)args.push(end);
+		
+		if(type == "number")iterable += "";
+		
+		//IE не умеет выполнять Array.prototype.slice для "string" и "number"
+		if(browser.msie < 9 && (type == "number" || type == "string"))trySlice = false;
+		
+		if(typeof iterable.length == "number") {
+			if(trySlice) try {//Попробуем применить Array.prototype.slice на наш объект
+				results = Array.prototype.slice.apply(iterable, args);//An idea from https://github.com/Quby/Fn.js/blob/master/fn.js::_.toArray
+				//Match result length of elements with initial length of elements
+				if(results.length == iterable.length)return results;
+			}
+			catch(e) {//IE throw error with iterable == "[object NodeList]"
+				//не получилось! -> выполняем обычную переборку
+			}
+			
+			results = [];
+			var i = start, length = end ? (end < 0 ? iterable.length + end : end) : iterable.length;
+			if(i < 0 && (i = (length + i), i) < 0)i = 0;
+			if(length > iterable.length)length = iterable.length;
+			else if(length < 0)length = 0;
+			for( ; i < length ; ++i)results.push(iterable[i]);
+			//for(var i = -1, l = iterable.length, v ; v = iterable[++i], i < l ; )if(v != void 0)results.push(v);
+			
+			return results;
+		}
+		
+		results = [];
+		
+		if(type == "object") {
+			for(var i in iterable)if(forse || !iterable.hasOwnProperty || iterable.hasOwnProperty(i))results.push(iterable[i]);
+			return !start && !end && results || results.slice.apply(results, args);
+		}
+		
+		return results;	
+	}
+	
+	//[CHANGE | EDIT egor|02.11.11]
+	function forEach(obj, iterator, context) {
+		var hop = Object.prototype.hasOwnProperty;
+		for(var key in obj)
+			if(hop.call(obj, key)) if(iterator.call(context, obj[key], key, obj) === false)break;
+		return obj;
+	}
 
     function merge(a,b)
     {
