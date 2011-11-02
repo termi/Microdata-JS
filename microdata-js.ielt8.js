@@ -1,7 +1,7 @@
 // This file MUST be in <head> section of document
 
 /*@cc_on
-@if (@_jscript_version < 11)
+@if (@_jscript_version < 8)
 
 var __URL_TO_ELEMENT_BEHAVIOR__='microdata-js.ielt8.htc',
 	__STYLE_ID="ielt8_style_prev_for_behaviour";
