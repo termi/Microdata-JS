@@ -21,7 +21,6 @@
  * @requared:
  *  1. Utils.Dom.DOMException (DOMException like error)
  *  2. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
- *  3. Object.addProperty and Object.addProperties
  */
 
 ;(function(global, $$, _toArray) {
@@ -273,7 +272,7 @@ function fixPrototypes(global) {
 
 		// Definition IF < 8 support
 		var _HTMLElement_prototype = (global["HTMLElement"] && global["HTMLElement"].prototype || /*ie8*/global["Element"] && global["Element"].prototype);
-		if(_HTMLElement_prototype)Object["addProperties"](_HTMLElement_prototype, {
+		if(_HTMLElement_prototype)Object.defineProperties(_HTMLElement_prototype, {
 			"itemValue" : {
 				"get" : function() {
 					var element = this,

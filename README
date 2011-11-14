@@ -1,10 +1,12 @@
-Implementation of the HTMl5 Microdata specification.
+Implementation of the HTML5 Microdata specification.
 
  + Live "properties" property (turn it on manualy window.microdata_liveProperties = true)
  + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
  + Extending DocumentFragment.prototype with getItems function
  + Extending PropertyNodeList and HTMLPropertiesCollection prototypes with toJSON functions
  + IE < 8 support
+
+Demo http://jsfiddle.net/cakz8/
 
 Microdata JS API
 
@@ -21,7 +23,7 @@ window.microdata_liveProperties =
 
 Browsers support
 
-Opera, Google Chrome, Safary, FireFox, IE8 and IE < 8 support, and maybe others
+Opera < 12, Google Chrome, Safary, FireFox, IE8 and IE < 8 support, and maybe others
 
  + for IE < 8 support you need toArray and querySelectorAll functions:
    1. Set the window.$A to your toArray function.
