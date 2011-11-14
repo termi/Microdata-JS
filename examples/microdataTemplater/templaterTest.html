@@ -91,7 +91,7 @@ window.onload = function() {
 	global.microdataTemplate.init();
 	
 	var /** @type {Node} */
-		chatTemplate = document.getItems("template:chat"),
+		chatTemplate = document.getItems("myschema.com/Chat"),
 		curData = data;
 	
 	if(chatTemplate)
@@ -118,7 +118,7 @@ window.onload = function() {
 
 
 
-<section itemscope itemtype="template:chat" id=test>
+<section itemscope itemtype="myschema.com/Chat" id=test>
 	<header>
 		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id GLOBAL.date?format=HHMMss","source":"data-src"}' data-src="i/av/#account.id#.jpg?#GLOBAL.date#" alt=Аватара>
 		<p><span itemprop=account.name></span> (<span itemprop=account.nick></span>)
@@ -126,7 +126,7 @@ window.onload = function() {
 	</header>
 	
 	<ul class="data">
-		<li itemprop=messages itemscope itemtype="template:chat/message" itemid="uuid:#from.id#:chat:message?datestamp=#GLOBAL.date#" data-tmpl-options='{"itemprop":"from.id GLOBAL.date?format=dd_mm.yyyy_HHMMss","source":"itemid","target":"itemid"}'>
+		<li itemprop=messages itemscope itemtype="myschema.com/ChatMessage" itemid="uuid:#from.id#:chat:message?datestamp=#GLOBAL.date#" data-tmpl-options='{"itemprop":"from.id GLOBAL.date?format=dd_mm.yyyy_HHMMss","source":"itemid","target":"itemid"}'>
 			<span itemprop=from.name>
 				Message from #from.name# (<span itemprop="from.nick"></span>)
 			</span>
@@ -135,14 +135,14 @@ window.onload = function() {
 </section>
 
 Remote teamplate test (<b style="color:red">put files for you server for work</b>):
-<section itemscope itemtype="template:chat" itemid="http://localhost/Microdata-JS/examples/microdataTemplater/tmpl.txt#testRemoteSection">
+<section itemscope itemtype="myschema.com/Chat" itemid="http://localhost/Microdata-JS/examples/microdataTemplater/tmpl.txt#testRemoteSection">
 </section>
 
 <p>
 
 </p>
 
-<section itemscope itemtype="template:chat" id="test_ppp">
+<section itemscope itemtype="myschema.com/Chat" id="test_ppp">
 	<header>
 		ID:<p itemprop=account.id[]>#account.id#<span>|</span></p>
 		<img itemprop=account.avatar data-tmpl-options='{"itemprop":"account.id","source":"data-src"}' data-src="i/av/#account.id#.jpg" alt=Аватара>
@@ -151,7 +151,7 @@ Remote teamplate test (<b style="color:red">put files for you server for work</b
 	</header>
 	
 	<ul class="data">
-		<li itemprop=messages itemscope itemtype="template:chat/message">
+		<li itemprop=messages itemscope itemtype="myschema.com/ChatMessage">
 			<span itemprop=from.name>
 				TODO::
 				<x-if itemprop=from.name expression="from.name.length>6">
