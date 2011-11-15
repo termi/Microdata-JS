@@ -1,0 +1,1 @@
+put a.ielt8.htc and microdata-js.ielt8.htc to this folder or in you're domen root, or edit microdata-js.ielt8.js and libs/a.ielt8.js -> __URL_TO_ELEMENT_BEHAVIOR__ prop

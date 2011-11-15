@@ -6,6 +6,11 @@
 <PUBLIC:PROPERTY NAME="nextElementSibling" GET="getNextElementSibling" />
 <PUBLIC:PROPERTY NAME="previousElementSibling" GET="getPreviousElementSibling" />
 <PUBLIC:METHOD NAME="insertAfter" />
+<PUBLIC:METHOD NAME="tick" />
+
+<SCRIPT LANGUAGE="jscript">
+function tick() {alert(1) }
+</SCRIPT>
 <SCRIPT>
 //@requared window.Utils.Dom.DOMStringCollection
 

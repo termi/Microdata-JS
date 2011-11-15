@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+<style>
+
+</style>
+<!--[if lt IE 9]>
+<script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
+<![endif]-->
+<script src=../../libs/a.js></script><!-- es5-shim and $$, $A(toArray) functions -->
+<script src=../../__SRC/microdata-js.js?4></script>
+<!--[if lt IE 8]>
+<script src="../../libs/a.ielt8.js"></script>
+<script src="../../microdata-js.ielt8.js"></script>
+<![endif]-->
+<script>
+
+window.onload = function() {
+	
+	
+	
+	
+}
+
+function doit() {
+	
+	
+	var _documentFragment = document.createDocumentFragment(),
+		div = document.createElement("div");
+		
+	div.innerHTML = input.value;
+	
+	_documentFragment.appendChild(div);
+	
+	var bookItem = _documentFragment.getItems("http://schema.org/Book")[0];
+	
+	output.value = JSON.stringify(bookItem.properties);
+}
+</script>
+
+</head>
+
+<body>
+
+
+<textarea id=input style="width:100%;height:400px">
+<div itemscope itemtype="http://schema.org/Book">
+
+<img itemprop="image" src="catcher-in-the-rye-book-cover.jpg" />
+<span itemprop="name">The Catcher in the Rye</span> -
+ <link itemprop="bookFormat" href="http://schema.org/Paperback">Mass Market Paperback
+by <a itemprop="author" href="/author/jd_salinger.html">J.D. Salinger</a>
+
+<div itemprop="aggregateRating" itemscope itemtype="http://schema.org/AggregateRating">
+  <span itemprop="ratingValue">4</span> stars -
+  <span itemprop="reviewCount">3077</span> reviews
+</div>
+
+<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+  Price: <span itemprop="price">$6.99</span>
+  <meta itemprop="priceCurrency" content="USD" />
+  <link itemprop="availability" href="http://schema.org/InStock">In Stock
+</div>
+</textarea>
+
+<input value=doit! onclick="doit()" type=button>
+
+<textarea id=output style="width:100%;height:400px">

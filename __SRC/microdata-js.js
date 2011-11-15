@@ -43,6 +43,39 @@ function fixPrototypes(global) {
 		document["getItems"] = fixPrototypes.new_getItems;
 	}*/
 	
+	function itemToJSON(itemElement) {
+		var result,
+			i = -1,
+			cur;
+		
+		if(itemElement.length !== undefined) {
+			result = {"items" : []};
+			
+			while(cur = itemElement[++i]) {
+				if(cur.getAttribute("itemscope") !== null)
+					result["items"].push(itemToJSON(cur))
+			}
+			
+			return result;
+		}
+		
+		if(itemElement.getAttribute("itemscope") !== null) {
+			result = {};
+			
+			var val;
+			
+			if(val = itemElement.getAttribute("itemid"))
+				result['id'] = val;
+
+			if(val = itemElement.getAttribute("itemtype"))
+				result['type'] = val;
+			
+			result["properties"] = itemElement["properties"].toJSON();
+		}
+		
+		return result;
+	}
+	
 	if(!fixPrototypes.fixedDocumentFragment) {
 		//Fix DocumentFragment
 		var _a;
@@ -87,12 +120,12 @@ function fixPrototypes(global) {
 				i = -1,
 				cur;
 			
-			while(cur = values[++i])
+			while(cur = values[++i]) {
 				if(cur instanceof Element) {
-					cur = MicrodataJS["itemToJSON"](cur);//if cur is not Microdata element return undefined
-				
-					cur && result.push(cur);
+					cur = itemToJSON(cur);//if cur is not Microdata element return undefined
 				}
+				cur && result.push(cur);
+			}
 			
 			return result;
 		}
@@ -532,8 +565,14 @@ function fixPrototypes(global) {
 		 * @param {string} itemTypes - whitespace-separated string of types to match
 		 * @this {Document|DocumentFragment}
 		 */
-		document["getItems"] = function (itemTypes) {
+		document["getItems"] = function(itemTypes) {
 			itemTypes = (itemTypes || "").trim();//default value
+			
+			/*
+			var selector=itemTypes.split(" ").map(function(t){
+				return '[itemtype~="'+t.replace(/"/g, '\\"')+'"]'
+			})
+			*/
 			
 			var items = 
 					(browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
