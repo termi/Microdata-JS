@@ -8,8 +8,8 @@
 <!--[if lt IE 9]>
 <script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
 <![endif]-->
-<script src=../../libs/a.js></script><!-- es5-shim and $$, $A(toArray) functions -->
-<script src=../../__SRC/microdata-js.js?4></script>
+<script src="../../libs/a.js"></script><!-- es5-shim and $$, $A(toArray) functions -->
+<script src=../../__SRC/microdata-js.js?5></script>
 <!--[if lt IE 8]>
 <script src="../../libs/a.ielt8.js"></script>
 <script src="../../microdata-js.ielt8.js"></script>
@@ -19,11 +19,8 @@
 <script src=microdataTemplater.js?4></script>
 <script>
 
-window.onload = function() {
-	
-	
-	var global = window;
-	
+window.addEventListener("load", function() {
+	var global = this;
 	
 	function _isEmptyElement(element) {
 		var isEmpty = !element.firstChild, i = 0;
@@ -109,7 +106,7 @@ window.onload = function() {
 				itt.appendChild(btn);
 			}
 		});
-}
+}, false);
 </script>
 
 </head>
@@ -151,7 +148,7 @@ Remote teamplate test (<b style="color:red">put files for you server for work</b
 	</header>
 	
 	<ul class="data">
-		<li itemprop=messages itemscope itemtype="myschema.com/ChatMessage">
+		<li itemprop=messages itemscope itemtype="myschema.com/ChatMessage" id=kkkk>
 			<span itemprop=from.name>
 				TODO::
 				<x-if itemprop=from.name expression="from.name.length>6">
@@ -163,7 +160,7 @@ Remote teamplate test (<b style="color:red">put files for you server for work</b
 			</span>
 			<div itemprop=body>
 		</li>
-		<x-if itemprop=messages expression="messages.iteration==2">
+		<x-if id=ttt2 itemprop=messages expression="messages.iteration==2">
 			<div>2</div>
 		</x-if>
 		<x-elseif itemprop=messages expression="messages.iteration%3==0">

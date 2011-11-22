@@ -246,7 +246,6 @@ function fixPrototypes(global) {
 					thisObj[i] = null;
 					delete thisObj[i];
 				}
-				
 			
 			thisObj["length"] = 0;
 			thisObj["names"] = [];
@@ -575,7 +574,7 @@ function fixPrototypes(global) {
 			*/
 			
 			var items = 
-					(browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
+					//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
 						$$("[itemscope]", this),
 				matches = [],
 				_itemTypes = (itemTypes || "").trim().split(/\s+/);
@@ -613,7 +612,7 @@ function fixPrototypes(global) {
 	 * @param {Node|Document|DocumentFragment} root
 	 * @return {Array.<Node>}
 	 */
-	function(selector, root) {return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},
+	function(selector, root) {root = root || document;return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},
 	/**
 	 * Youre own toArray function
 	 * @param {*} iterable value

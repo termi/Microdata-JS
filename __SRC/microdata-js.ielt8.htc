@@ -30,7 +30,7 @@ el._["__ielt8__attr_"+attr]=value;
 el.setAttribute(attr,value);
 }
 function ietl8_getAttribute(el, attr){
-var r=el._["__ielt8__attr_"+attr];
+var r=el._&&el._["__ielt8__attr_"+attr];
 return r===q?null:r;
 }
 var __getAttribute_o82hh__obj={"itemvalue":1,"itemprop":1,"itemscope":1,"itemid":1,"itemtype":1,"itemref":1};
@@ -85,7 +85,10 @@ return ietl8_setAttribute(this,"itemref",a+"")}
 function get_properties(){
 var a=this._.__properties_CACHE__;
 if(a)if(window.microdata_liveProperties)a._clear();else return a;else a=this._.__properties_CACHE__=new HTMLPropertiesCollection;
-var d=[],e=[],c=[];$A(this.childNodes).forEach(function(a){a.nodeType===1&&d.push(a)});ietl8_getAttribute(this,"itemref")&&(c=ietl8_getAttribute(this,"itemref").trim().split(/\s+/),c.forEach(function(a){(a=document.getElementById(a))&&d.push(a)}));d=d.filter(function(a,b){var e=
+var d=[],e=[],c=[];
+for(var _i=0,_l=this.childNodes.length,_c;_i<_l;++_i)if((_c=this.childNodes[_i]).nodeType===1)d.push(_c);
+//$A(this.childNodes).forEach(function(a){a.nodeType===1&&d.push(a)});
+ietl8_getAttribute(this,"itemref")&&(c=ietl8_getAttribute(this,"itemref").trim().split(/\s+/),c.forEach(function(a){(a=document.getElementById(a))&&d.push(a)}));d=d.filter(function(a,b){var e=
 g,c=a,f=[];if(d.indexOf(a)!==b&&d.indexOf(a,b)!==-1)return false;for(;(c=c.parentNode)!==g&&c.nodeType===1;)if(f.push(c),ietl8_getAttribute(c,"itemscope")!==g){e=c;break}return e!==g?d.indexOf(e)!==-1?false:!f.some(function(a){var b=-1,c=g;if((b=d.indexOf(a))!==-1){for(a=d[b];(a=a.parentNode)!==g&&a.nodeType===1;)if(ietl8_getAttribute(a,"itemscope")!==g){c=a;break}if(c===e)return true}return false}):true});for(d.sort(function(a,b){return 3-((b.compareDocumentPosition?b.compareDocumentPosition(a):b.contains?(b!=
 a&&b.contains(a)&&16)+(b!=a&&a.contains(b)&&8)+(b.sourceIndex>=0&&a.sourceIndex>=0?(b.sourceIndex<a.sourceIndex&&4)+(b.sourceIndex>a.sourceIndex&&2):1)+0:0)&6)});c=d.pop();)ietl8_getAttribute(c,"itemprop")&&e.push(c),ietl8_getAttribute(c,"itemscope")===g&&(c=$A(c.childNodes).reverse(),c.forEach(function(a){a.nodeType===1&&d.push(a)}));e.forEach(function(b){$A(b.itemProp).forEach(a._push.bind(a,b,b.itemValue))});return a}
 </SCRIPT>

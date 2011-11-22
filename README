@@ -4,7 +4,7 @@ Implementation of the HTML5 Microdata specification.
  + Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
  + Extending DocumentFragment.prototype with getItems function
  + Extending PropertyNodeList and HTMLPropertiesCollection prototypes with toJSON functions
- + IE < 8 support
+ + IE < 8 support and maybe need some extra work
 
 Demo http://jsfiddle.net/cakz8/
 

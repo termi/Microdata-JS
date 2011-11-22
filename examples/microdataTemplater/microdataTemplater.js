@@ -5,7 +5,37 @@
 
 //closure
 ;(function(global, ajax) {
-	
+
+// ----------- =========== IE < 8 ONLY =========== -----------
+var ie = 10;
+/*@cc_on ie = @_jscript_version @*/
+
+//ie = 7;//Only for DEBUG ie IE
+
+if(ie < 8)(function() {
+	var ielt8_style_prev_for_behaviour = $('ielt8_style_prev_for_behaviour'),//ielt8_style_prev_for_behaviour FROM microdata-js.ielt8.js
+		behaviours;
+		
+	if(ielt8_style_prev_for_behaviour && ielt8_style_prev_for_behaviour.tagName == "STYLE" && (behaviours = ielt8_style_prev_for_behaviour.getAttribute("data-url"))) {
+		
+		var style = document.createElement('style'),
+			constent = "x-if,x-else,x-elseif{behavior:"+behaviours+"}";
+		style.type = 'text/css';
+
+		if(style.styleSheet) {
+			style.styleSheet.cssText = constent;
+		} else {
+			style.appendChild(d.createTextNode(content));
+		}
+
+		document.getElementsByTagName('head')[0].appendChild(style);
+	}
+	else {
+		throw new Error("No scecific DOM-SHIM lib for IE < 8");
+	}
+})();
+// ----------- =========== IE < 8 ONLY END =========== -----------
+
 var DEBUG = !!global.DEBUG;
 
 /** 
@@ -37,7 +67,6 @@ if(browser.msie && browser.msie < 9) {
 	// Обновляем функции cloneElement
 	cloneElement.ielt9Refresh();
 }
-
 
 
 /**
@@ -406,20 +435,32 @@ global.microdataTemplate = new function() {
 		
 		//thisObj.setProperty(itemElement, "", data, forse);
 
-		if(itemElement.properties){
-			$A(itemElement.properties).forEach(function(DOMElement) {
-				$A(DOMElement.itemProp).forEach(function(name) {
-					if(DOMElement.getAttribute("itemscope") != null && data[name]) {
-						thisObj.setItem(DOMElement, data[name], forse);
-					}
-					else {
-						thisObj.setProperty(DOMElement, name, data[name.split(".")[0]], forse);
-					}
-				});
-			})
+		try {
+			if(itemElement.properties){
+				$A(itemElement.properties).forEach(function(DOMElement) {
+					$A(DOMElement.itemProp).forEach(function(name) {
+						try {
+							if(DOMElement.getAttribute("itemscope") != null && data[name]) {
+								thisObj.setItem(DOMElement, data[name], forse);
+							}
+							else {
+								thisObj.setProperty(DOMElement, name, data[name.split(".")[0]], forse);
+							}
+						}
+						catch(e) {
+							//alert("222 ||| namee = " + name + " | " + data[name])
+							throw e;
+						}
+					});
+				})
+			}
+			else {
+				if(DEBUG)Log.err("The is no 'properties' property in element")
+			}
 		}
-		else {
-			if(DEBUG)Log.err("The is no 'properties' property in element")
+		catch(e) {
+			//alert(itemElement.outerHTML)
+			throw e;
 		}
 	}
 	
