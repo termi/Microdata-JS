@@ -37,17 +37,19 @@ getAttributes = window._ielt8_getAttributes;
  *  getElementsByClassName : <Function>,
  *  compareDocumentPosition : <Function>
  * }*/
-getClassList=window._ielt8_Element_proto.getclassList;
-getFirstElementChild=window._ielt8_Element_proto.getfirstElementChild;
-getLastElementChild=window._ielt8_Element_proto.getlastElementChild;
-getFirstElementChild=window._ielt8_Element_proto.getfirstElementChild;
-getNextElementSibling=window._ielt8_Element_proto.getnextElementSibling;
-getPreviousElementSibling=window._ielt8_Element_proto.getpreviousElementSibling;
-getChildElementCount=window._ielt8_Element_proto.getchildElementCount;
+var Element_proto=window._ielt8_Element_proto
+getClassList=Element_proto.getclassList;
+getFirstElementChild=Element_proto.getfirstElementChild;
+getLastElementChild=Element_proto.getlastElementChild;
+getFirstElementChild=Element_proto.getfirstElementChild;
+getNextElementSibling=Element_proto.getnextElementSibling;
+getPreviousElementSibling=Element_proto.getpreviousElementSibling;
+getChildElementCount=Element_proto.getchildElementCount;
 
-if(!this.insertAfter)this.insertAfter=window._ielt8_Element_proto.insertAfter;
-if(!this.getElementsByClassName)this.getElementsByClassName=window._ielt8_Element_proto.getElementsByClassName;
-if(!this.compareDocumentPosition)this.compareDocumentPosition=window._ielt8_Element_proto.compareDocumentPosition;
+if(this.cloneNode!==Element_proto.cloneNode)this.cloneNode=Element_proto.cloneNode;
+if(!this.insertAfter)this.insertAfter=Element_proto.insertAfter;
+if(!this.getElementsByClassName)this.getElementsByClassName=Element_proto.getElementsByClassName;
+if(!this.compareDocumentPosition)this.compareDocumentPosition=Element_proto.compareDocumentPosition;
 
 </SCRIPT>
 </PUBLIC:COMPONENT>

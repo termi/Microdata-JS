@@ -63,9 +63,6 @@ if(browser.msie && browser.msie < 9) {
 	msie_CreateDocumentFragment.orig = document.createDocumentFragment;
 	
 	document.createDocumentFragment = msie_CreateDocumentFragment;
-	
-	// Обновляем функции cloneElement
-	cloneElement.ielt9Refresh();
 }
 
 
@@ -157,7 +154,7 @@ global.microdataTemplate = new function() {
 				element.__templateElement__ = el;
 				
 				while(_el = el.childNodes[i++])
-					element.appendChild(cloneElement(_el));
+					element.appendChild(_el.cloneNode(true));
 							
 				_callback();
 			}
@@ -226,7 +223,7 @@ global.microdataTemplate = new function() {
 			templateElement = element.__templateElement__;
 
 		//temp
-		if(!templateElement)element.__templateElement__ = _documentFragment.appendChild(cloneElement(element));
+		if(!templateElement)element.__templateElement__ = _documentFragment.appendChild(element.cloneNode(true));
 			
 		attrFrom = tmplOptions["source"] || attrFrom;
 		
@@ -281,7 +278,7 @@ global.microdataTemplate = new function() {
 			else {
 				//Если мы в первый раз шаблонизируем элемент - сохраним первоначальный шаблон
 				if(!templateElement) {
-					element.__templateElement__ = _documentFragment.appendChild(cloneElement(element));
+					element.__templateElement__ = _documentFragment.appendChild(element.cloneNode(true));
 				}
 				
 				$A(element.childNodes).forEach(function(textChild) {
@@ -388,7 +385,7 @@ global.microdataTemplate = new function() {
 						}
 						
 						el = element.parentNode.insertAfter(
-							cloneElement(element),
+							element.cloneNode(true),
 							element._lastInsertedNode || element);
 							
 						el.__templateElement__ = element.__templateElement__;
@@ -414,14 +411,14 @@ global.microdataTemplate = new function() {
 			var first = true, el, _itemprop;
 			$A(data).forEach(function(curData) {//Принудительно приведём к массиву и пробежимся по нему
 				if(first) {
-					itemElement.__templateElement__ = _documentFragment.appendChild(cloneElement(itemElement));
+					itemElement.__templateElement__ = _documentFragment.appendChild(itemElement.cloneNode(true));
 					thisObj.setItem(itemElement, curData, forse);
 					
 					first = false;
 					return;
 				}
 				el = itemElement.parentNode.insertAfter(
-					cloneElement(itemElement.__templateElement__),
+					itemElement.__templateElement__.cloneNode(true),
 					itemElement._lastInsertedNode || itemElement);
 					
 				el.__templateElement__ = itemElement.__templateElement__;
