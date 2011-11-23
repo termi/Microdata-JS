@@ -5,61 +5,49 @@
 <PUBLIC:PROPERTY NAME="lastElementChild" GET="getLastElementChild" />
 <PUBLIC:PROPERTY NAME="nextElementSibling" GET="getNextElementSibling" />
 <PUBLIC:PROPERTY NAME="previousElementSibling" GET="getPreviousElementSibling" />
-<PUBLIC:METHOD NAME="insertAfter" />
+<PUBLIC:PROPERTY NAME="childElementCount" GET="getChildElementCount" />
+
+<PUBLIC:PROPERTY NAME="DOCUMENT_POSITION_DISCONNECTED" VALUE="1" />
+<PUBLIC:PROPERTY NAME="DOCUMENT_POSITION_PRECEDING" VALUE="2" />
+<PUBLIC:PROPERTY NAME="DOCUMENT_POSITION_FOLLOWING" VALUE="4" />
+<PUBLIC:PROPERTY NAME="DOCUMENT_POSITION_CONTAINS" VALUE="8" />
+<PUBLIC:PROPERTY NAME="DOCUMENT_POSITION_CONTAINED_BY" VALUE="16" />
+
 <SCRIPT>
-//@requared window.Utils.Dom.DOMStringCollection
 
 if(!this._)this._={};
 
+/*@requared window._ielt8_getAttributes */
 //attributes property start
 //Save original attributes property if we don't do it
 if(!this._.__ielt8_attributes__)this._.__ielt8_attributes__=this.attributes;
 
-function getAttributes(){
-var tmp=this._.__ielt8_attributes__,res={length:0};
-for(var i=0,l=tmp.length,k=0;i<l;i++)if(tmp[i].specified){
-res[k++]=tmp[i];
-res[tmp[i].name]=tmp[i];
-res.length++;
-}
-return res;
-}
-//attributes property end
+getAttributes = window._ielt8_getAttributes;
 //attributes property end
 
-function getClassList(){
-var thisObj=this;
-if(!thisObj._._cachedClassList)thisObj._._cachedClassList=new window.Utils.Dom.DOMStringCollection(thisObj.className,function(){
-//thisObj.setAttribute("class", this.value);
-thisObj.className=this.value;
-})
-return thisObj._._cachedClassList;
-}
+/*@requared window._ielt8_Element_proto = {
+ *  getclassList : <Function>,
+ *  getfirstElementChild : <Function>,
+ *  getlastElementChild : <Function>,
+ *  getfirstElementChild : <Function>,
+ *  getnextElementSibling : <Function>,
+ *  getpreviousElementSibling : <Function>,
+ *  getchildElementCount : <Function>,
+ *  insertAfter : <Function>,
+ *  getElementsByClassName : <Function>,
+ *  compareDocumentPosition : <Function>
+ * }*/
+getClassList=window._ielt8_Element_proto.getclassList;
+getFirstElementChild=window._ielt8_Element_proto.getfirstElementChild;
+getLastElementChild=window._ielt8_Element_proto.getlastElementChild;
+getFirstElementChild=window._ielt8_Element_proto.getfirstElementChild;
+getNextElementSibling=window._ielt8_Element_proto.getnextElementSibling;
+getPreviousElementSibling=window._ielt8_Element_proto.getpreviousElementSibling;
+getChildElementCount=window._ielt8_Element_proto.getchildElementCount;
 
-function getFirstElementChild(){
-var node = this.firstChild;
-while(node&&node.nodeType!=1)node=node.nextSibling;
-return node;
-}
+if(!this.insertAfter)this.insertAfter=window._ielt8_Element_proto.insertAfter;
+if(!this.getElementsByClassName)this.getElementsByClassName=window._ielt8_Element_proto.getElementsByClassName;
+if(!this.compareDocumentPosition)this.compareDocumentPosition=window._ielt8_Element_proto.compareDocumentPosition;
 
-function getLastElementChild(){
-var node = this.lastChild;
-while(node&&node.nodeType!=1)node=node.previousSibling;
-return node;
-}
-
-function getNextElementSibling(){
-var node=this;
-while(node=node.nextSibling)if(node.nodeType==1)break;
-return node;
-}
-
-function getPreviousElementSibling(){
-var node=this;
-while(node=node.previousSibling)if(node.nodeType==1)break;
-return node;
-}
-
-function insertAfter(a,b){return this.insertBefore(a,b.nextSibling)}
 </SCRIPT>
 </PUBLIC:COMPONENT>

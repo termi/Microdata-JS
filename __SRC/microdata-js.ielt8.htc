@@ -33,8 +33,11 @@ function ietl8_getAttribute(el, attr){
 var r=el._&&el._["__ielt8__attr_"+attr];
 return r===q?null:r;
 }
+
 var __getAttribute_o82hh__obj={"itemvalue":1,"itemprop":1,"itemscope":1,"itemid":1,"itemtype":1,"itemref":1};
+
 function ietl8_getAttribute2(attr){return (attr in __getAttribute_o82hh__obj)?ietl8_getAttribute(this,attr):this._.__getAttribute_o82hh__(attr)}
+
 function fixIElt8Item(item){
 if(!item._.__getAttribute_o82hh__){item._.__getAttribute_o82hh__=item.getAttribute;
 item.getAttribute=ietl8_getAttribute2}
@@ -77,7 +80,7 @@ return ietl8_setAttribute(this,"itemtype",a+"")}
 // itemRef
 function get_itemRef(){var a=ietl8_getAttribute(this,"itemref"),d=this;d._["__ielt8_itemRef"]?a!==g&&d._["__ielt8_itemRef"]+""!==a&&d._["__ielt8_itemRef"].update(a):d._["__ielt8_itemRef"]=new window.Utils.Dom.DOMStringCollection(a,function(){ietl8_setAttribute(d,"itemref",
 this+"")});return d._["__ielt8_itemRef"]}
-function set_itemRef(val){
+function set_itemRef(a){
 fixIElt8Item(this);
 return ietl8_setAttribute(this,"itemref",a+"")}
 
