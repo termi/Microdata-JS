@@ -499,7 +499,7 @@ function fixPrototypes(global) {
 					});
 
 					pending.sort(function(a, b) {
-						return 3 - (compareDocumentPosition(b, a) & 6);
+						return 3 - (b.compareDocumentPosition(a) & 6);
 					});
 
 					while((current = pending.pop())) {
@@ -546,7 +546,7 @@ function fixPrototypes(global) {
 		 * @param {!Element} a Element to compare with b.
 		 * @param {!Element} b Element to compare against a.
 		 */
-		function compareDocumentPosition(a, b) {
+		/*function compareDocumentPosition(a, b) {
 			return a.compareDocumentPosition ?
 				a.compareDocumentPosition(b) :
 				a.contains ?
@@ -557,7 +557,7 @@ function fixPrototypes(global) {
 						(a.sourceIndex > b.sourceIndex && 2) :
 					1) +
 				0 : 0;
-		};
+		};*/
 		
 		/**
 		 * Gets all of the elements that have an itemType
@@ -573,16 +573,43 @@ function fixPrototypes(global) {
 			})
 			*/
 			
+			/*
+			Эта версия поддерживает несколько значений в itemType. Например: <div id="test" itemscope itemtype="f.ru/test1 f.ru/test2">,  document.getItems("f.ru/test1") - бедет найден div#test
+			Но похоже, что Opera 12 не поддерживает несколько значений в itemType :( TODO:: выяснить, как в спецификации
+			
+			var items = 
+					//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
+						$$("[itemscope]", this),
+				matches = [],
+				_itemTypes = (itemTypes || "").trim().split(/\s+/),
+				node,
+				i = -1;
+			
+			while(node = items[++i]) {
+				var typeString = node.getAttribute('itemtype') || "",
+					types = typeString.split(/\s+/),
+					_curType,
+					accept;
+				
+				accept = !(typeString &&
+					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
+						(!("itemScope" in node) || node["itemScope"]));//writing to the itemScope property must affect whether the element is returned by getItems;
+				
+				while(_curType = types.pop() && !accept)
+					(accept = !~_itemTypes.indexOf(_curType)) &&
+						matches.push(node);
+			}*/
+			
 			var items = 
 					//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
 						$$("[itemscope]", this),
 				matches = [],
 				_itemTypes = (itemTypes || "").trim().split(/\s+/);
-			
+
 			for(var i = 0, l = items.length ; i < l ; ++i) {
 				var node = items[i],
 					type = node.getAttribute('itemtype');
-					
+
 				if((!itemTypes || ~_itemTypes.indexOf(type)) &&
 					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 					(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
