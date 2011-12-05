@@ -565,8 +565,7 @@ function fixPrototypes(global) {
 		 * @this {Document|DocumentFragment}
 		 */
 		document["getItems"] = function(itemTypes) {
-			itemTypes = (itemTypes || "").trim();//default value
-			
+		
 			/*
 			var selector=itemTypes.split(" ").map(function(t){
 				return '[itemtype~="'+t.replace(/"/g, '\\"')+'"]'
@@ -599,18 +598,22 @@ function fixPrototypes(global) {
 					(accept = !~_itemTypes.indexOf(_curType)) &&
 						matches.push(node);
 			}*/
+		
+		
+			var isitemTypes = !!itemTypes;
+			itemTypes = (itemTypes || "").trim().split(/\s+/);
+			
 			
 			var items = 
 					//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
 						$$("[itemscope]", this),
-				matches = [],
-				_itemTypes = (itemTypes || "").trim().split(/\s+/);
+				matches = [];
 
 			for(var i = 0, l = items.length ; i < l ; ++i) {
 				var node = items[i],
 					type = node.getAttribute('itemtype');
 
-				if((!itemTypes || ~_itemTypes.indexOf(type)) &&
+				if((!isitemTypes || ~itemTypes.indexOf(type)) &&
 					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 					(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
 					matches.push(node);
