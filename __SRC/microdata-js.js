@@ -16,7 +16,7 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.5.2
+ * @version 2.6
  * 
  * @requared:
  *  1. Utils.Dom.DOMException (DOMException like error)
@@ -98,9 +98,19 @@ function fixPrototypes(global) {
 	}
 	
 	if(!(_a = global["PropertyNodeList"])) {
-		//"PropertyNodeList" and "HTMLPropertiesCollection" prototypers not yet implemented - waiting
-		global.addEventListener("DOMContentLoaded", fixPrototypes.bind(global, global), false),
-			global.addEventListener("load", fixPrototypes.bind(global, global), false)
+		//Strange behavior in Opera 12 - HTMLPropertiesCollection and PropertyNodeList  constructors available only when it realy need - when <el>.property and <el>.property[<prop_name>]
+		// http://jsfiddle.net/EVmfh/
+		
+		var orig = document["getItems"];
+		document["getItems"] = function() {
+			var test_div = document.createElement("div");
+			test_div.innerHTML = "<p itemprop='t'>1</p>";
+			test_div["properties"]["t"][0].innerHTML = "2";
+			
+			fixPrototypes(global);//Extend prototype's
+			
+			return (document["getItems"] = orig).apply(document, arguments)
+		}
 	}
 	else {
 		//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
@@ -112,8 +122,8 @@ function fixPrototypes(global) {
 			});
 		}
 		
-		var PropertyNodeList = global["PropertyNodeList"];
-		if(!(_a = PropertyNodeList.prototype).toJSON)_a.toJSON = function() {
+		var _PropertyNodeList = global["PropertyNodeList"];
+		if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON = function() {
 			var thisObj = this,
 				result = [],
 				values = thisObj["values"],
@@ -138,7 +148,7 @@ function fixPrototypes(global) {
 				cur;
 			
 			while(cur = names[++i])
-				if(thisObj[cur] instanceof PropertyNodeList)
+				if(thisObj[cur] instanceof _PropertyNodeList)
 					result[cur] = thisObj[cur].toJSON();
 		
 			return result;
@@ -146,7 +156,7 @@ function fixPrototypes(global) {
 	
 		fixPrototypes.isfixed = true;
 	}
-}
+};
 
 /**
  * Fix Microdata Item Element for browsers with no Microdata support
@@ -170,132 +180,132 @@ function fixPrototypes(global) {
 		
 		if(!global["PropertyNodeList"]) {
 		// --- === PropertyNodeList CLASS [BEGIN] === ---
-		/**
-		 * @constructor
-		 */
-		var PropertyNodeList = global["PropertyNodeList"] = function () {
-			var thisObj = this;
+			/**
+			 * @constructor
+			 */
+			var PropertyNodeList = global["PropertyNodeList"] = function () {
+				var thisObj = this;
 
-		/* PUBLICK */
-			/** @type {number} */
-			thisObj["length"] = 0;
-			/** @type {Array} "values" property http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api */
-			thisObj["values"] = [];
-		}
-		/**
-		 * Non-standart (not in native PropertyNodeList class) method
-		 * @param {Element} newNode DOM-element to add
-		 */
-		PropertyNodeList.prototype["_push"] = function(newNode, prop_value) {
-			var thisObj = this;
+			/* PUBLICK */
+				/** @type {number} */
+				thisObj["length"] = 0;
+				/** @type {Array} "values" property http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api */
+				thisObj["values"] = [];
+			}
+			/**
+			 * Non-standart (not in native PropertyNodeList class) method
+			 * @param {Element} newNode DOM-element to add
+			 */
+			PropertyNodeList.prototype["_push"] = function(newNode, prop_value) {
+				var thisObj = this;
+				
+				thisObj[thisObj["length"]++] = newNode;
+				thisObj["values"].push(prop_value)
+			}
+			/**
+			 * @param {string} p_name property name
+			 * @return {PropertyNodeList}
+			 */
+			PropertyNodeList.prototype["namedItem"] = function(p_name) {
+				//TODO:: Still don't know what code here
+			}
+			/**
+			 * @type {undefined}
+			 * For compliance with real PropertyNodeList.prototype
+			 */
+			PropertyNodeList.prototype["values"] = void 0;
+			/**
+			 * @return {Array}
+			 */
+			PropertyNodeList.prototype["getValues"] = function() {
+				return this["values"];
+			}
+			/**
+			 * @return {string}
+			 */
+			PropertyNodeList.prototype.toString = function() {
+				return "[object PropertyNodeList]";
+			}
 			
-			thisObj[thisObj["length"]++] = newNode;
-			thisObj["values"].push(prop_value)
-		}
-		/**
-		 * @param {string} p_name property name
-		 * @return {PropertyNodeList}
-		 */
-		PropertyNodeList.prototype["namedItem"] = function(p_name) {
-			//TODO:: Still don't know what code here
-		}
-		/**
-		 * @type {undefined}
-		 * For compliance with real PropertyNodeList.prototype
-		 */
-		PropertyNodeList.prototype["values"] = void 0;
-		/**
-		 * @return {Array}
-		 */
-		PropertyNodeList.prototype["getValues"] = function() {
-			return this["values"];
-		}
-		/**
-		 * @return {string}
-		 */
-		PropertyNodeList.prototype.toString = function() {
-			return "[object PropertyNodeList]";
-		}
-		
-	// --- === PropertyNodeList CLASS [END] and method item below === ---
+		// --- === PropertyNodeList CLASS [END] and method PropertyNodeList.prototype["item"] below === ---
 		}
 
 		if(!global["HTMLPropertiesCollection"]) {
-	// --- === HTMLPropertiesCollection CLASS [BEGIN] === ---
-		/**
-		 * @constructor
-		 */
-		var HTMLPropertiesCollection = global["HTMLPropertiesCollection"] = function () {
-			var thisObj = this;
+		// --- === HTMLPropertiesCollection CLASS [BEGIN] === ---
+			/**
+			 * @constructor
+			 */
+			var HTMLPropertiesCollection = global["HTMLPropertiesCollection"] = function () {
+				var thisObj = this;
 
-		/* PUBLICK */	
-			thisObj["length"] = 0;
-			//It's also possible to get a list of all the property names using the object's names IDL attribute.
-			//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
-			thisObj["names"] = [];
-		}
-		/**
-		 * Non-standart (not in native HTMLPropertiesCollection class) method
-		 * Clear HTMLPropertiesCollection
-		 */
-		HTMLPropertiesCollection.prototype._clear = function() {
-			var thisObj = this;
+			/* PUBLICK */	
+				thisObj["length"] = 0;
+				//It's also possible to get a list of all the property names using the object's names IDL attribute.
+				//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
+				thisObj["names"] = [];
+			}
+			/**
+			 * Non-standart (not in native HTMLPropertiesCollection class) method
+			 * Clear HTMLPropertiesCollection
+			 */
+			HTMLPropertiesCollection.prototype._clear = function() {
+				var thisObj = this;
+				
+				for(var i in thisObj)
+					if(thisObj[i] instanceof PropertyNodeList) {
+						thisObj[i] = null;
+						delete thisObj[i];
+					}
+				
+				thisObj["length"] = 0;
+				thisObj["names"] = [];
+			}
 			
-			for(var i in thisObj)
-				if(thisObj[i] instanceof PropertyNodeList) {
-					thisObj[i] = null;
-					delete thisObj[i];
-				}
-			
-			thisObj["length"] = 0;
-			thisObj["names"] = [];
-		}
-		
-		/**
-		 * Non-standart (not in native HTMLPropertiesCollection class) method
-		 * @param {Element} newNode DOM-element to add
-		 * @param {string|Node} prop_value Microdata-property value
-		 * @param {string} name Microdata-property name
-		 */
-		HTMLPropertiesCollection.prototype["_push"] = function(newNode, prop_value, name) {
-			var thisObj = this;
-			
-			thisObj[thisObj["length"]++] = newNode;
-			
-			if(!~thisObj["names"].indexOf(name)) {
-				thisObj["names"].push(name);
-			};
-			
-			(
-				thisObj[name] || (thisObj[name] = new PropertyNodeList())
-			)["_push"](newNode, prop_value);
-		}
-		/**
-		 * @param {string} p_name property name
-		 * @return {PropertyNodeList}
-		 *TODO:: Check for compliance with FINALE Microdata specification.
-		 */
-		HTMLPropertiesCollection.prototype["namedItem"] = function(p_name) {
-			return this[p_name] instanceof PropertyNodeList ? this[p_name] : new PropertyNodeList();
-		}
-		/**
-		 * @return {string}
-		 */
-		HTMLPropertiesCollection.prototype.toString = function() {
-			return "[object HTMLPropertiesCollection]";
-		}
-		/**
-		 * @param {number} index of item
-		 * @return {Element} 
-		 */
-		HTMLPropertiesCollection.prototype["item"] = PropertyNodeList.prototype["item"] = function(_index) {
-			var thisObj = this;
-			
-			if(isNaN(_index))_index = 0;
-			
-			return thisObj[_index] || null;
-		}
-	// --- === HTMLPropertiesCollection CLASS [END] === ---
+			/**
+			 * Non-standart (not in native HTMLPropertiesCollection class) method
+			 * @param {Element} newNode DOM-element to add
+			 * @param {string|Node} prop_value Microdata-property value
+			 * @param {string} name Microdata-property name
+			 */
+			HTMLPropertiesCollection.prototype["_push"] = function(newNode, prop_value, name) {
+				var thisObj = this;
+				
+				thisObj[thisObj["length"]++] = newNode;
+				
+				if(!~thisObj["names"].indexOf(name)) {
+					thisObj["names"].push(name);
+				};
+				
+				(
+					thisObj[name] || (thisObj[name] = new PropertyNodeList())
+				)["_push"](newNode, prop_value);
+			}
+			/**
+			 * @param {string} p_name property name
+			 * @return {PropertyNodeList}
+			 *TODO:: Check for compliance with FINALE Microdata specification.
+			 */
+			HTMLPropertiesCollection.prototype["namedItem"] = function(p_name) {
+				return this[p_name] instanceof PropertyNodeList ? this[p_name] : new PropertyNodeList();
+			}
+			/**
+			 * @return {string}
+			 */
+			HTMLPropertiesCollection.prototype.toString = function() {
+				return "[object HTMLPropertiesCollection]";
+			}
+			/**
+			 * @param {number} index of item
+			 * @return {Element} 
+			 */
+			HTMLPropertiesCollection.prototype["item"] = PropertyNodeList.prototype["item"] = function(_index) {
+				var thisObj = this;
+				
+				if(isNaN(_index))_index = 0;
+				
+				return thisObj[_index] || null;
+			}
+		// --- === HTMLPropertiesCollection CLASS [END] === ---
 		}
 
 
@@ -540,26 +550,6 @@ function fixPrototypes(global) {
 		catch(e) {}
 
 		/**
-		 * Compares the document position of two elements.
-		 * MIT Licensed, John Resig: http://ejohn.org/blog/comparing-document-position/
-		 *
-		 * @param {!Element} a Element to compare with b.
-		 * @param {!Element} b Element to compare against a.
-		 */
-		/*function compareDocumentPosition(a, b) {
-			return a.compareDocumentPosition ?
-				a.compareDocumentPosition(b) :
-				a.contains ?
-					(a != b && a.contains(b) && 16) +
-					(a != b && b.contains(a) && 8) +
-					(a.sourceIndex >= 0 && b.sourceIndex >= 0 ?
-						(a.sourceIndex < b.sourceIndex && 4) +
-						(a.sourceIndex > b.sourceIndex && 2) :
-					1) +
-				0 : 0;
-		};*/
-		
-		/**
 		 * Gets all of the elements that have an itemType
 		 * @param {string} itemTypes - whitespace-separated string of types to match
 		 * @this {Document|DocumentFragment}
@@ -600,20 +590,18 @@ function fixPrototypes(global) {
 			}*/
 		
 		
-			var isitemTypes = !!itemTypes;
-			itemTypes = (itemTypes || "").trim().split(/\s+/);
+			var isitemTypes = !!itemTypes,
+				_itemTypes = (itemTypes || "").trim().split(/\s+/);
 			
 			
-			var items = 
-					//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
-						$$("[itemscope]", this),
+			var items = $$("[itemscope]", this),
 				matches = [];
 
 			for(var i = 0, l = items.length ; i < l ; ++i) {
 				var node = items[i],
 					type = node.getAttribute('itemtype');
 
-				if((!isitemTypes || ~itemTypes.indexOf(type)) &&
+				if((!isitemTypes || ~_itemTypes.indexOf(type)) &&
 					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
 					(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
 					matches.push(node);
@@ -645,7 +633,7 @@ function fixPrototypes(global) {
 	function(selector, root) {root = root || document;return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},
 	/**
 	 * Youre own toArray function
-	 * @param {*} iterable value
+	 * @param {Object} iterable value
 	 * @return {Array}
 	 */
 	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}
