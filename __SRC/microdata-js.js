@@ -16,17 +16,17 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.6
+ * @version 2.9
  * 
  * @requared:
- *  1. Utils.Dom.DOMException (DOMException like error)
- *  2. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
+ *  1. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
  */
 
-;(function(global, $$, _toArray) {
+;(function(global, $$) {
 
 function fixPrototypes(global) {
-	if(fixPrototypes.isfixed)return;
+	//if(fixPrototypes.isfixed)return;
+	if(global["__prot_fix__isfixed"])return;
 	
 	/* too difficult
 	//Adding toJSON function
@@ -76,40 +76,29 @@ function fixPrototypes(global) {
 		return result;
 	}
 	
-	if(!fixPrototypes.fixedDocumentFragment) {
-		//Fix DocumentFragment
-		var _a;
-		
-		if((_a = global["DocumentFragment"]) && (_a = _a.prototype)) {//_a === global["DocumentFragment"]
-			_a["getItems"] = document["getItems"];//_a === global["DocumentFragment"].prototype
-		}
-		else {//IE < 8
-			var msie_CreateDocumentFragment = function() {
-				var df = msie_CreateDocumentFragment.orig.call(document);
-				df["getItems"] = document["getItems"];
-				return df;
-			}
-			msie_CreateDocumentFragment.orig = document.createDocumentFragment;
-			
-			document.createDocumentFragment = msie_CreateDocumentFragment;
-		}
-		
-		fixPrototypes.fixedDocumentFragment = true;
-	}
+	var _a;
 	
 	if(!(_a = global["PropertyNodeList"])) {
 		//Strange behavior in Opera 12 - HTMLPropertiesCollection and PropertyNodeList  constructors available only when it realy need - when <el>.property and <el>.property[<prop_name>]
 		// http://jsfiddle.net/EVmfh/
 		
-		var orig = document["getItems"];
-		document["getItems"] = function() {
+		var orig = HTMLDocument.prototype["getItems"];
+		/**
+		 * @this {(HTMLDocument|DocumentFragment)}
+		 */
+		HTMLDocument.prototype["getItems"] = function() {
 			var test_div = document.createElement("div");
 			test_div.innerHTML = "<p itemprop='t'>1</p>";
+			test_div["itemScope"] = true;
 			test_div["properties"]["t"][0].innerHTML = "2";
 			
-			fixPrototypes(global);//Extend prototype's
+			//DEBUG:: 
+			console.log((this.defaultView || global).location.href)
 			
-			return (document["getItems"] = orig).apply(document, arguments)
+			//If 'this' is not DocumentFragment, and 'this' is a docuemnt in iFrame defaultView would be exsist
+			fixPrototypes(this.defaultView || global);//Extend prototype's
+			
+			return (this["getItems"] = orig).apply(document, arguments)
 		}
 	}
 	else {
@@ -156,6 +145,28 @@ function fixPrototypes(global) {
 	
 		fixPrototypes.isfixed = true;
 	}
+	
+	if(!fixPrototypes.fixedDocumentFragment) {
+		//Fix DocumentFragment
+		
+		if((_a = global["DocumentFragment"]) && (_a = _a.prototype)) {//_a === global["DocumentFragment"]
+			_a["getItems"] = document["getItems"];//_a === global["DocumentFragment"].prototype
+		}
+		else {//IE < 8
+			var msie_CreateDocumentFragment = function() {
+				var df = msie_CreateDocumentFragment.orig.call(document);
+				df["getItems"] = document["getItems"];
+				return df;
+			}
+			msie_CreateDocumentFragment.orig = document.createDocumentFragment;
+			
+			document.createDocumentFragment = msie_CreateDocumentFragment;
+		}
+		
+		fixPrototypes.fixedDocumentFragment = true;
+	}
+	
+	//if(HTMLDocument && HTMLDocument.prototype)HTMLDocument.prototype["getItems"] = document["getItems"];
 };
 
 /**
@@ -171,12 +182,10 @@ function fixPrototypes(global) {
 	/**
 	 * @param {Window|Object} global The global object
 	 * @param {!Function} $$ querySelectorAll with toArray (must return Array)
-	 * @param {!Function} _toArray Function must return an Array representation of the enumeration.
 	 */
-	function(global, $$, _toArray) {
+	function(global, $$) {
 		//import
-		var DOMException_ = global["Utils"]["Dom"]["DOMException"],
-			DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
+		var DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
 		
 		if(!global["PropertyNodeList"]) {
 		// --- === PropertyNodeList CLASS [BEGIN] === ---
@@ -335,7 +344,12 @@ function fixPrototypes(global) {
 						elementName = element.nodeName;
 
 					if(element.getAttribute("itemprop") === null) {
-						throw new DOMException_("INVALID_ACCESS_ERR");
+						//TODO:: check it. If no test pass return this: throw new global["Utils"]["Dom"]["DOMException"]("INVALID_ACCESS_ERR")						
+					
+						//function throwDOMException(code)
+						var ex = Object.create(DOMException.prototype);
+						ex.code = 15;//INVALID_ACCESS_ERR
+						throw ex;
 					}
 
 					return element[
@@ -439,7 +453,7 @@ function fixPrototypes(global) {
 						children,
 						current;
 
-					_toArray(root.childNodes).forEach(function(el) {
+					Array.from(root.childNodes).forEach(function(el) {
 						if(el.nodeType === 1)pending.push(el)
 					});
 					
@@ -521,7 +535,7 @@ function fixPrototypes(global) {
 							// Push all the child elements of current onto pending, in tree order
 							// (so the first child of current will be the next element to be
 							// popped from pending).
-							children = _toArray(current.childNodes).reverse();
+							children = Array.from(current.childNodes).reverse();
 							children.forEach(function(child) {
 								if (child.nodeType === 1)pending.push(child);
 							});
@@ -620,7 +634,7 @@ function fixPrototypes(global) {
 	fixPrototypes
 )
 )
-(global, $$, _toArray)
+(global, $$)
 })
 (
 	window,
@@ -630,11 +644,5 @@ function fixPrototypes(global) {
 	 * @param {Node|Document|DocumentFragment} root
 	 * @return {Array.<Node>}
 	 */
-	function(selector, root) {root = root || document;return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},
-	/**
-	 * Youre own toArray function
-	 * @param {Object} iterable value
-	 * @return {Array}
-	 */
-	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}
+	function(selector, root) {root = root || document;return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))}
 );

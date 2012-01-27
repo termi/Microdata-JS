@@ -1,15 +1,10 @@
 // This file MUST be in <head> section of document
+// required window._ielt8_Element_proto
 
 ;(function() {
 
-var ie = 99;
-/*@cc_on ie = @_jscript_version @*/
-
-window.browser && window.browser.msie && (ie = window.browser.msie);
-
-//ie = 7//FOR DEBUG
-
-if(ie < 8) {
+//[bugfix] due to https://github.com/h5bp/html5-boilerplate/issues/378 update IE detection
+if(window._ielt8_Element_proto) {//IE < 8 polifill
 
 var __URL_TO_ELEMENT_BEHAVIOR__='microdata-js.ielt8.htc',
 	__STYLE_ID="ielt8_style_prev_for_behaviour";
