@@ -35,20 +35,24 @@ More examples in `example` folder
 ## Install
  - For modern browsers and IE8+:
   1. First add ES5 and DOM shim (for now only this shim supported: https://github.com/termi1uc1/ES5-DOM-SHIM/)
-    `<script src="a.js"></script>`
+
+            <script src="a.js"></script>
 
   2. When add microdata script
-    `<script src="microdata-js.js"></script>`
+
+            <script src="microdata-js.js"></script>
 
  - For IE6+ support:
   1. Add ES5 and DOM shim and microdata script
-    `<script src="a.js"></script>`
-    `<script src="microdata-js.js"></script>`
+
+            <script src="a.js"></script>
+            <script src="microdata-js.js"></script>
   2. Add ES5 and DOM shim and microdata script for IE6+
-    `<!--[if lt IE 8]>`
-    `<script src="a.ielt8.js"></script>`
-    `<script src="microdata-js.ielt8.js"></script>`
-    `<![endif]-->`
+
+            <!--[if lt IE 8]>
+            <script src="a.ielt8.js"></script>
+            <script src="microdata-js.ielt8.js"></script>
+            <![endif]-->
 	
   3. Add `microdata-js.ielt8.htc` to the root of your site
 
