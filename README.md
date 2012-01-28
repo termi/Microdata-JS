@@ -1,24 +1,23 @@
 # Implementation of the HTML5 Microdata specification
 
-__Spec__: http://www.whatwg.org/specs/web-apps/current-work/multipage/microdata.html
-__Demo__: http://jsfiddle.net/cakz8/
-__Status__: Stable, but need carefully use in IE < 9
+- __Spec__: http://www.whatwg.org/specs/web-apps/current-work/multipage/microdata.html
+- __Demo__: http://jsfiddle.net/cakz8/
+- __Status__: Stable, but need carefully use in IE < 9
 
 ## Example
-1. Simple
 
     var img = document.createElement("img");
-	img.itemProp = "test";
-	img.src = "http://example.org/example.jpg";
-	img.itemValue == img.src;//True
+    img.itemProp = "test";
+    img.src = "http://example.org/example.jpg";
+    img.itemValue == img.src;//True
 	
-	var div = document.createElement("div");
-	div.appendChild(p);
-	div.itemScope = true;
-	div.innerHTML = "<div><span><p itemprop=test>some test</p></span></div>";
-	div.properties["test"][0].itemValue;//"some test"
+    var div = document.createElement("div");
+    div.appendChild(p);
+    div.itemScope = true;
+    div.innerHTML = "<div><span><p itemprop=test>some test</p></span></div>";
+    div.properties["test"][0].itemValue;//"some test"
 		
-2. More examples in `example` folder
+More examples in `example` folder
 
 ## Microdata JS API
 
@@ -36,21 +35,20 @@ __Status__: Stable, but need carefully use in IE < 9
 ## Install
  - For modern browsers and IE8+:
   1. First add ES5 and DOM shim (for now only this shim supported: https://github.com/termi1uc1/ES5-DOM-SHIM/)
-
-    <script src="a.js"></script>
+    `<script src="a.js"></script>`
 
   2. When add microdata script
-  
-    <script src="microdata-js.js"></script>
+    `<script src="microdata-js.js"></script>`
 
  - For IE6+ support:
   1. Add ES5 and DOM shim and microdata script
+    `<script src="a.js"></script>`
+    `<script src="microdata-js.js"></script>`
   2. Add ES5 and DOM shim and microdata script for IE6+
-  
-    <!--[if lt IE 8]>
-    <script src="a.ielt8.js"></script>
-    <script src="microdata-js.ielt8.js"></script>
-    <![endif]-->
+    `<!--[if lt IE 8]>`
+    `<script src="a.ielt8.js"></script>`
+    `<script src="microdata-js.ielt8.js"></script>`
+    `<![endif]-->`
 	
   3. Add `microdata-js.ielt8.htc` to the root of your site
 
@@ -65,20 +63,10 @@ __Status__: Stable, but need carefully use in IE < 9
 ## Browsers support
 
  - Opera < 12, Google Chrome, Safary, FireFox, IE8 and IE < 8 support, and maybe others
- - for IE < 8 support:
-    1. Set the window.$$ to your function(selector, root){return Array.from(root.querySelectorAll(selector))} function (window.$$ must return Array)
-    2. Add "microdata-js.ielt8.js" script to <head> section on youre page and put "microdata-js.ielt8.htc" in root or edit "__PATH_TO_BEHAVIOR" var in "microdata-js.ielt8.js"
-    3. Add js implimentation of functions below (you can get it from "a.js", "a.ielt8.js" and "a.ielt8.htc" files in examples) :
-   
-        - window.Array.prototype.filter
-        - window.Array.prototype.indexOf
-        - window.Array.prototype.forEach
-        - window.Array.prototype.some
-        - window.Function.prototype.bind
 
 ## Tests
 
-`tests/Microdata_tests_files/Microdata_tests.html` based on [Opera microdata tests](based on http://w3c-test.org/html/tests/submission/Opera/microdata/001.html)
+`tests/Microdata_tests_files/Microdata_tests.html` based on (Opera microdata tests)[based on http://w3c-test.org/html/tests/submission/Opera/microdata/001.html]
 		
 ## LIMITATION
 
