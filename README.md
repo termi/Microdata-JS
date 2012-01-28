@@ -70,7 +70,7 @@ More examples in `example` folder
 
 ## Tests
 
-`tests/Microdata_tests_files/Microdata_tests.html` based on (Opera microdata tests)[based on http://w3c-test.org/html/tests/submission/Opera/microdata/001.html]
+`tests/Microdata_tests_files/Microdata_tests.html` based on (Opera microdata tests)[http://w3c-test.org/html/tests/submission/Opera/microdata/001.html]
 		
 ## LIMITATION
 
