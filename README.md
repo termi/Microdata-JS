@@ -54,7 +54,7 @@ More examples in `example` folder
             <script src="microdata-js.ielt8.js"></script>
             <![endif]-->
 	
-  3. Add `microdata-js.ielt8.htc` to the root of your site
+  3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `microdata-js.ielt8.htc` to the root of your site
 
 ## Features
 
