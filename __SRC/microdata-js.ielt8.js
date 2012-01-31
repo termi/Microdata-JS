@@ -9,7 +9,7 @@
 ;(function() {
 
 //[bugfix] due to https://github.com/h5bp/html5-boilerplate/issues/378 update IE detection
-if(window._ielt8_Element_proto) {//IE < 8 polifill
+if(window.Node.prototype["ielt8"]) {//IE < 8 polifill
 
 var __URL_TO_ELEMENT_BEHAVIOR__='microdata-js.ielt8.htc',
 	__STYLE_ID="ielt8_style_prev_for_behaviour";
