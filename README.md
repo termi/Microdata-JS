@@ -2,7 +2,7 @@
 
 - __Spec__: http://www.whatwg.org/specs/web-apps/current-work/multipage/microdata.html
 - __Demo__: http://jsfiddle.net/cakz8/
-- __Status__: Stable, but need carefully use in IE < 9
+- __Status__: Stable, but be carefull in IE < 9
 
 ## Example
 
@@ -76,7 +76,7 @@ More examples in `example` folder
 
  1. Require Utils.Dom.DOMStringCollection (DOMSettableTokenList like object) (created in https://github.com/termi1uc1/ES5-DOM-SHIM/)
  2. [microdata-js.ielt8.js] due to https://github.com/h5bp/html5-boilerplate/issues/378 i can't detection IE by @cc. Temporary add a dependence of window._ielt8_Element_proto object, wich is created in https://github.com/termi1uc1/ES5-DOM-SHIM/
- 3. Opera >= 12:
+ 3. Opera >= 11.60:
   - PropertyNodeList.values, PropertyNodeList.toJSON and HTMLPropertiesCollection.toJSON propertys will be available only after window.onload event
 
 ## TODO
@@ -85,6 +85,7 @@ More examples in `example` folder
  2. Live HTMLElement.prototype without window.microdata_liveProperties option
  3. Improvement speed of selecting Microdata ilements in IE < 8
  4. Delete code adding "values" property if it not compliance with FINALE Microdata specification
+ 5. (allows multiple values in itemtype)[http://html5.org/tools/web-apps-tracker?from=6667&to=6668] ?
  
 ## License
 

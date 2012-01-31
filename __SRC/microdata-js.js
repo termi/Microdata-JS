@@ -16,13 +16,16 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 2.9
+ * @version 3
  * 
  * @requared:
  *  1. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
  */
 
-;(function(global, $$) {
+/** @define {boolean} */
+var INCLUDE_EXTRAS = false;
+ 
+;(function(global) {
 
 function fixPrototypes(global) {
 	//if(fixPrototypes.isfixed)return;
@@ -52,14 +55,14 @@ function fixPrototypes(global) {
 			result = {"items" : []};
 			
 			while(cur = itemElement[++i]) {
-				if(cur.getAttribute("itemscope") !== null)
+				if(cur.getAttribute("itemscope") !== null)//hasAttribute
 					result["items"].push(itemToJSON(cur))
 			}
 			
 			return result;
 		}
 		
-		if(itemElement.getAttribute("itemscope") !== null) {
+		if(itemElement.getAttribute("itemscope") !== null) {//hasAttribute
 			result = {};
 			
 			var val;
@@ -93,7 +96,7 @@ function fixPrototypes(global) {
 			test_div["properties"]["t"][0].innerHTML = "2";
 			
 			//DEBUG:: 
-			console.log((this.defaultView || global).location.href)
+			//console.log((this.defaultView || global).location.href)
 			
 			//If 'this' is not DocumentFragment, and 'this' is a docuemnt in iFrame defaultView would be exsist
 			fixPrototypes(this.defaultView || global);//Extend prototype's
@@ -149,20 +152,11 @@ function fixPrototypes(global) {
 	if(!fixPrototypes.fixedDocumentFragment) {
 		//Fix DocumentFragment
 		
+		//IE < 9 has no DocumentFragment so it should be shimd (but not in this lib)
 		if((_a = global["DocumentFragment"]) && (_a = _a.prototype)) {//_a === global["DocumentFragment"]
 			_a["getItems"] = document["getItems"];//_a === global["DocumentFragment"].prototype
 		}
-		else {//IE < 8
-			var msie_CreateDocumentFragment = function() {
-				var df = msie_CreateDocumentFragment.orig.call(document);
-				df["getItems"] = document["getItems"];
-				return df;
-			}
-			msie_CreateDocumentFragment.orig = document.createDocumentFragment;
-			
-			document.createDocumentFragment = msie_CreateDocumentFragment;
-		}
-		
+				
 		fixPrototypes.fixedDocumentFragment = true;
 	}
 	
@@ -181,9 +175,8 @@ function fixPrototypes(global) {
 // 1. Microdata unsupported
 	/**
 	 * @param {Window|Object} global The global object
-	 * @param {!Function} $$ querySelectorAll with toArray (must return Array)
 	 */
-	function(global, $$) {
+	function(global) {
 		//import
 		var DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
 		
@@ -321,6 +314,13 @@ function fixPrototypes(global) {
 		// ------- Extending Element.prototype ---------- //
 		// For IE < 8 support use microdata-js.ielt8.js and microdata-js.ielt8.htc
 
+		_throwDOMException = function(errStr) {
+			var ex = Object.create(DOMException.prototype);
+			ex.code = DOMException[errStr];
+			ex.message = errStr +': DOM Exception ' + ex.code;
+			throw ex;
+		}
+		
 		// Definition IF < 8 support
 		var _HTMLElement_prototype = (global["HTMLElement"] && global["HTMLElement"].prototype || /*ie8*/global["Element"] && global["Element"].prototype);
 		if(_HTMLElement_prototype)Object.defineProperties(_HTMLElement_prototype, {
@@ -331,6 +331,10 @@ function fixPrototypes(global) {
 
 					return element.getAttribute("itemscope") !== null ? element :
 						element.getAttribute("itemprop") === null ? null :
+						
+						//Non-standart !!!
+						INCLUDE_EXTRAS && (~['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT'].indexOf(elementName)) ? element.value :
+						
 						elementName === "META" ? element.content :
 						~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'].indexOf(elementName) ? element.src :
 						~["A","AREA","LINK"].indexOf(elementName) ? element.href :
@@ -346,13 +350,13 @@ function fixPrototypes(global) {
 					if(element.getAttribute("itemprop") === null) {
 						//TODO:: check it. If no test pass return this: throw new global["Utils"]["Dom"]["DOMException"]("INVALID_ACCESS_ERR")						
 					
-						//function throwDOMException(code)
-						var ex = Object.create(DOMException.prototype);
-						ex.code = 15;//INVALID_ACCESS_ERR
-						throw ex;
+						_throwDOMException("INVALID_ACCESS_ERR");
 					}
 
 					return element[
+						//Non-standart !!!
+						INCLUDE_EXTRAS && (~['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT'].indexOf(elementName)) ? "value" :
+						
 						elementName === 'META' ? "content" :
 						~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'].indexOf(elementName) ? "src" :
 						~['A', 'AREA', 'LINK'].indexOf(elementName) ? "href" :
@@ -453,7 +457,7 @@ function fixPrototypes(global) {
 						children,
 						current;
 
-					Array.from(root.childNodes).forEach(function(el) {
+					Array["from"](root.childNodes).forEach(function(el) {
 						if(el.nodeType === 1)pending.push(el)
 					});
 					
@@ -535,7 +539,7 @@ function fixPrototypes(global) {
 							// Push all the child elements of current onto pending, in tree order
 							// (so the first child of current will be the next element to be
 							// popped from pending).
-							children = Array.from(current.childNodes).reverse();
+							children = Array["from"](current.childNodes).reverse();
 							children.forEach(function(child) {
 								if (child.nodeType === 1)pending.push(child);
 							});
@@ -577,6 +581,9 @@ function fixPrototypes(global) {
 			*/
 			
 			/*
+			"Redefine itemtype='' to allow multiple types if they share the same vocabulary"
+			http://html5.org/tools/web-apps-tracker?from=6667&to=6668
+			
 			Эта версия поддерживает несколько значений в itemType. Например: <div id="test" itemscope itemtype="f.ru/test1 f.ru/test2">,  document.getItems("f.ru/test1") - бедет найден div#test
 			Но похоже, что Opera 12 не поддерживает несколько значений в itemType :( TODO:: выяснить, как в спецификации
 			
@@ -608,7 +615,7 @@ function fixPrototypes(global) {
 				_itemTypes = (itemTypes || "").trim().split(/\s+/);
 			
 			
-			var items = $$("[itemscope]", this),
+			var items = Array["from"](document.querySelectorAll("[itemscope]", this)),
 				matches = [];
 
 			for(var i = 0, l = items.length ; i < l ; ++i) {
@@ -634,15 +641,8 @@ function fixPrototypes(global) {
 	fixPrototypes
 )
 )
-(global, $$)
+(global)
 })
 (
-	window,
-	/**
-	 * Youre own function(){return toArray(root.querySelectorAll(#selector#))} function
-	 * @param {string} selector
-	 * @param {Node|Document|DocumentFragment} root
-	 * @return {Array.<Node>}
-	 */
-	function(selector, root) {root = root || document;return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))}
+	window
 );

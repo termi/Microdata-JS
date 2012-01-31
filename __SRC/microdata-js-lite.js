@@ -17,17 +17,13 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 1.4
+ * @version 1.4.1
  *   
  */
 
 
 if(!document["getItems"])(
-/**
- * @param {!Function} $$ querySelectorAll with toArray (must return Array)
- * @param {!Function} _toArray Function must return an Array representation of the enumeration.
- */
-function($$, _toArray) {
+function() {
 	var MicrodataJS = global["MicrodataJS"] = {
 		/**
 		 * Returns the itemValue of an Element.
@@ -107,7 +103,7 @@ function($$, _toArray) {
 			children,
 			current;
 
-		_toArray(root.childNodes).forEach(function(el) {
+		Array.from(root.childNodes).forEach(function(el) {
 			if(el.nodeType === 1)pending.push(el)
 		});
 
@@ -197,7 +193,7 @@ function($$, _toArray) {
 				// Push all the child elements of current onto pending, in tree order
 				// (so the first child of current will be the next element to be
 				// popped from pending).
-				children = _toArray(current.childNodes).reverse();
+				children = Array.from(current.childNodes).reverse();
 				children.forEach(function(child) {
 					if (child.nodeType === 1)pending.push(child);
 				});
@@ -244,7 +240,7 @@ function($$, _toArray) {
 			
 		var __getItemsCACHE__ = this["__getItemsCACHE__"] || (this["__getItemsCACHE__"] = {}),
 			items = __getItemsCACHE__[itemTypes] || 
-				(__getItemsCACHE__[itemTypes] = $$("[itemscope]", this)),
+				(__getItemsCACHE__[itemTypes] = Array.from(document.querySelectorAll("[itemscope]", this))),
 			matches = [],
 			_itemTypes = (itemTypes || "").trim().split(/\s+/);
 		
@@ -263,19 +259,4 @@ function($$, _toArray) {
 		
 		return matches;
 	}
-})(
-	window,
-	/**
-	 * Youre own function(){return toArray(root.querySelectorAll(#selector#))} function
-	 * @param {string} selector
-	 * @param {Node|Document|DocumentFragment} root
-	 * @return {Array.<Node>}
-	 */
-	function(selector, root) {return window["$$"] ? window["$$"](selector, root) : Array.prototype.slice.apply(root.querySelectorAll(selector))},
-	/**
-	 * Youre own toArray function
-	 * @param {*} iterable value
-	 * @return {Array}
-	 */
-	function(iterable) {return window["$A"] ? window["$A"](iterable) : Array.prototype.slice.apply(iterable)}
-);
+})(window);

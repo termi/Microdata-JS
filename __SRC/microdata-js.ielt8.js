@@ -1,3 +1,8 @@
+// ==ClosureCompiler==
+// @compilation_level SIMPLE_OPTIMIZATIONS
+// @output_file_name microdata-js.ielt8.js
+// ==/ClosureCompiler==
+
 // This file MUST be in <head> section of document
 // required window._ielt8_Element_proto
 
