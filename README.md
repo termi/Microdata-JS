@@ -34,7 +34,7 @@ More examples in `example` folder
 
 ## Install
  - For modern browsers and IE8+:
-  1. First add ES5 and DOM shim (for now only this shim supported: https://github.com/termi1uc1/ES5-DOM-SHIM/)
+  1. First add ES5 and DOM shim (for now only this shim supported: https://github.com/termi/ES5-DOM-SHIM/)
 
             <script src="a.js"></script>
 
@@ -43,19 +43,23 @@ More examples in `example` folder
             <script src="microdata-js.js"></script>
 
  - For IE6+ support:
-  1. Add ES5 and DOM shim and microdata script
+  1. Add ES5 and DOM shim and microdata script as:
 
-            <script src="a.js"></script>
-            <script src="microdata-js.js"></script>
-  2. Add ES5 and DOM shim and microdata script for IE6+
-
-            <!--[if lt IE 8]>
-            <script src="a.ielt8.js"></script>
+			<!--[if lt IE 9]>
+			<script src="a.ie8.js"></script>
+			<![endif]-->
+			<!--[if lt IE 8]>
+			<script src="a.ielt8.js"></script>
             <script src="microdata-js.ielt8.js"></script>
-            <![endif]-->
+			<![endif]-->
+			<script src="a.js"></script>
+            <script src="microdata-js.js"></script>
 	
-  3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `microdata-js.ielt8.htc` to the root of your site
+  3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `a.ie6.ielt8.htc` (for IE6) and `microdata-js.ielt8.htc` to the root of your site
 
+## EXTRAs
+TODO::
+  
 ## Features
 
  - Live "properties" property (turn it on manualy window.microdata_liveProperties = true)
@@ -74,9 +78,9 @@ More examples in `example` folder
 		
 ## LIMITATION
 
- 1. Require Utils.Dom.DOMStringCollection (DOMSettableTokenList like object) (created in https://github.com/termi1uc1/ES5-DOM-SHIM/)
+ 1. Require Utils.Dom.DOMStringCollection (DOMSettableTokenList like object) (created in https://github.com/termi/ES5-DOM-SHIM/)
  2. `microdata-js.ielt8.js` due to https://github.com/h5bp/html5-boilerplate/issues/378 i can't detection IE by `@cc`.
- 3. Require `window.Node.prototype.ielt8` for IE < 8 detection, wich is created in https://github.com/termi1uc1/ES5-DOM-SHIM/
+ 3. Require `window.Node.prototype.ielt8` for IE < 8 detection, wich is created in https://github.com/termi/ES5-DOM-SHIM/
  4. Opera >= 11.60:
   - PropertyNodeList.values, PropertyNodeList.toJSON and HTMLPropertiesCollection.toJSON propertys will be available only after window.onload event
 

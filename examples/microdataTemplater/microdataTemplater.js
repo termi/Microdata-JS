@@ -1,18 +1,14 @@
 ﻿// @required(microdata)
 // @required browser.msie
-// @required $A
-// @required HTMLElement.prototype.insertAfter
+// @required Array["from"]
+// @required HTMLElement.prototype["insertAfter"]
 
 //closure
 ;(function(global, ajax) {
 
 // ----------- =========== IE < 8 ONLY =========== -----------
-var ie = 10;
-/*@cc_on ie = @_jscript_version @*/
 
-//ie = 7;//Only for DEBUG ie IE
-
-if(ie < 8)(function() {
+if(window.Node.prototype["ielt8"]) {//IE < 8 polifill
 	var ielt8_style_prev_for_behaviour = $('ielt8_style_prev_for_behaviour'),//ielt8_style_prev_for_behaviour FROM microdata-js.ielt8.js
 		behaviours;
 		
@@ -33,7 +29,7 @@ if(ie < 8)(function() {
 	else {
 		throw new Error("No scecific DOM-SHIM lib for IE < 8");
 	}
-})();
+};
 // ----------- =========== IE < 8 ONLY END =========== -----------
 
 var DEBUG = !!global.DEBUG;
@@ -82,7 +78,7 @@ function Variable(_name, _value, _getter, _setter) {
 		return _value;
 	}
 	thisObj.get = function() {
-		return _getter ? _getter.apply(thisObj, [_value].concat($A(arguments))) : _value;
+		return _getter ? _getter.apply(thisObj, [_value].concat(Array["from"](arguments))) : _value;
 	}
 }
 /**
@@ -109,7 +105,9 @@ Variable.prototype.parseParams = function(paramStr) {
 /** Темплейтер на основе HTML5 Microdata API
  * @param {Node} microdataItem Корневой DOM-элемент - Microdata Item
  * @param {Object|Array.<Object>} data Данные для вставки в microdataItem */
-global.microdataTemplate = new function() {
+global.microdataTemplate = new 
+/** @constructor */
+function() {
 	var thisObj = this;
 	
 /* PRIVATE */
@@ -151,7 +149,7 @@ global.microdataTemplate = new function() {
 		
 		function _element_ready(el, _callback) {
 			if(el) {
-				element.__templateElement__ = el;
+				element["__templateElement__"] = el;
 				
 				while(_el = el.childNodes[i++])
 					element.appendChild(_el.cloneNode(true));
@@ -220,10 +218,10 @@ global.microdataTemplate = new function() {
 			attrTo = isMicrodataItem ? "" : "innerHTML",
 			attrFrom = attrTo,
 			tmplOptions = JSON.parse(element.getAttribute("data-tmpl-options")) || {},
-			templateElement = element.__templateElement__;
+			templateElement = element["__templateElement__"];
 
 		//temp
-		if(!templateElement)element.__templateElement__ = _documentFragment.appendChild(element.cloneNode(true));
+		if(!templateElement)element["__templateElement__"] = _documentFragment.appendChild(element.cloneNode(true));
 			
 		attrFrom = tmplOptions["source"] || attrFrom;
 		
@@ -231,16 +229,15 @@ global.microdataTemplate = new function() {
 			attrTo = tmplOptions["target"];
 		
 		if(!isMicrodataItem) {
-			if(elementName === 'META')
-				attrTo = "content";
-			else if(['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'VIDEO'].indexOf(elementName) !== -1)
-				attrTo = "src";
-			else if(['A', 'AREA', 'LINK'].indexOf(elementName) !== -1)
-				attrTo = "href";
-			else if(elementName === 'OBJECT')
-				attrTo = "data";
-			else if (elementName === 'TIME' && element.getAttribute('datetime'))
-				attrTo = "dateTime";//TODO:: Check IE[7,6]
+			
+			(~['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT'].indexOf(elementName)) ? attrTo = "value" ://Non-standart !!!
+			
+			elementName === 'META' ? attrTo = "content" :
+			~['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'].indexOf(elementName) ? attrTo = "src" :
+			~['A', 'AREA', 'LINK'].indexOf(elementName) ? attrTo = "href" :
+			elementName === 'OBJECT' ? attrTo = "data" :
+			elementName === 'TIME' && element.getAttribute('datetime') ? attrTo = "dateTime" ://TODO:: Check element.dateTime in IE[7,6]
+				attrTo = "innerHTML";
 		}
 		
 		if(!attrTo || !attrFrom)return value;
@@ -250,7 +247,7 @@ global.microdataTemplate = new function() {
 			var textNodesValues = [], forseReturn;
 			
 			//Сначало проверим, а не являются ли текущие текстовые ноды шаблоном
-			if(itemprop && itemprop != "")$A(element.childNodes).forEach(function(textChild) {//перебираем текстовые ноды
+			if(itemprop && itemprop != "")Array["from"](element.childNodes).forEach(function(textChild) {//перебираем текстовые ноды
 				if(textChild.nodeType === 3) {
 					if(~textChild.nodeValue.indexOf("#" + itemprop + "#")) {
 						textChild.nodeValue = textChild.nodeValue.replace("#" + itemprop + "#", value);
@@ -262,7 +259,7 @@ global.microdataTemplate = new function() {
 			if(forseReturn)return value;
 			
 			//Шаблоны не нашли - берём сохранённый шаблон
-			if(itemprop && itemprop != "" && templateElement)$A(templateElement.childNodes).forEach(function(textChild, i) {//перебираем текстовые ноды
+			if(itemprop && itemprop != "" && templateElement)Array["from"](templateElement.childNodes).forEach(function(textChild, i) {//перебираем текстовые ноды
 				if(textChild.nodeType === 3) {
 					if(~textChild.nodeValue.indexOf("#" + itemprop + "#")) {
 						textNodesValues.push(textChild.nodeValue.replace("#" + itemprop + "#", value));
@@ -278,16 +275,16 @@ global.microdataTemplate = new function() {
 			else {
 				//Если мы в первый раз шаблонизируем элемент - сохраним первоначальный шаблон
 				if(!templateElement) {
-					element.__templateElement__ = _documentFragment.appendChild(element.cloneNode(true));
+					element["__templateElement__"] = _documentFragment.appendChild(element.cloneNode(true));
 				}
 				
-				$A(element.childNodes).forEach(function(textChild) {
+				Array["from"](element.childNodes).forEach(function(textChild) {
 					if(textChild.nodeType === 3 && textNodesValues.length) {
 						textChild.nodeValue = textNodesValues.shift();
 					}
 				})
 				textNodesValues.forEach(function(new_textChild_value) {
-					element.appent(document.createTextNode(new_textChild_value));
+					element.appendChild(document.createTextNode(new_textChild_value));
 				})
 			}
 		}
@@ -304,13 +301,13 @@ global.microdataTemplate = new function() {
 
 /* PUBLICK */
 	/** Установим значение одного property
-	 * @param {(Element|Node)} element DOM-элемент - Microdata item
+	 * @param {Node} _element DOM-элемент - Microdata item
 	 * @param {string} propertyName  */
-	thisObj.setProperty = function(element, propertyName, data, forse) {
+	thisObj.setProperty = function(_element, propertyName, data, forse) {
 		var /** @type {Array.<string>} */
 			propertyNames,
 			/** @type {boolean} */
-			isMicrodataItem = element.getAttribute("itemscope") !== null || element.getAttribute("itemtype") !== null,
+			isMicrodataItem = _element.getAttribute("itemscope") !== null || _element.getAttribute("itemtype") !== null,
 			/** @type {Array.<string>} */
 			props,
 			/** @type {number} */
@@ -326,7 +323,7 @@ global.microdataTemplate = new function() {
 			/** @type {string} */
 			tempStr;
 			
-		tmplOptions = JSON.parse(element.getAttribute("data-tmpl-options")) || {};
+		tmplOptions = JSON.parse(_element.getAttribute("data-tmpl-options")) || {};
 		//Если в настройках переназначается propertyName
 		if(tmplOptions["itemprop"])propertyName = tmplOptions["itemprop"];
 		
@@ -340,7 +337,7 @@ global.microdataTemplate = new function() {
 			if(propertyName.substr(-2) === "[]") {
 				curProp_value_isArray = true;
 				propertyName = propertyName.substring(0, propertyName.length - 2);
-				if((tempStr = element.getAttribute("itemprop") || "").substr(-2) === "[]")element.setAttribute("itemprop", tempStr.substr(0, tempStr.length - 2));
+				if((tempStr = _element.getAttribute("itemprop") || "").substr(-2) === "[]")_element.setAttribute("itemprop", tempStr.substr(0, tempStr.length - 2));
 			}
 			
 			props = propertyName.split(".");
@@ -353,7 +350,7 @@ global.microdataTemplate = new function() {
 				props = props[0].split(".");
 				if(props[1]) {
 					curProp_value = _variables[props[1]];
-					if(curProp_value)curProp_value = curProp_value.get(curProp_value.parseParams(tempStr), element);
+					if(curProp_value)curProp_value = curProp_value.get(curProp_value.parseParams(tempStr), _element);
 					i = props.length + 1;
 				}
 				else curProp_value = null;
@@ -369,30 +366,30 @@ global.microdataTemplate = new function() {
 			if(curProp_value === void 0 || curProp_value === null || i != props.length + 1)return;
 			
 			//Текущий элемент - Microdata Item
-			if(element.getAttribute("itemscope") != null) {
-				_setItemValue(element, curProp_value, propertyName, forse);
-				//thisObj.setItem(element, data, forse);
+			if(_element.getAttribute("itemscope") != null) {
+				_setItemValue(_element, curProp_value, propertyName, forse);
+				//thisObj.setItem(_element, data, forse);
 			}
 			else {
 				if(curProp_value_isArray) {
 					var first = true, el;
-					$A(curProp_value).forEach(function(curVal) {//Принудительно преведём к массиву и пробежимся по нему
+					Array["from"](curProp_value).forEach(function(curVal) {//Принудительно преведём к массиву и пробежимся по нему
 						if(first) {
-							_setItemValue(element, curVal, propertyName, forse);
+							_setItemValue(_element, curVal, propertyName, forse);
 							
 							first = false;
 							return;
 						}
 						
-						el = element.parentNode.insertAfter(
-							element.cloneNode(true),
-							element._lastInsertedNode || element);
+						el = _element.parentNode["insertAfter"](
+							_element.cloneNode(true),
+							/*_element._lastInsertedNode || */_element);
 							
-						el.__templateElement__ = element.__templateElement__;
+						el["__templateElement__"] = _element["__templateElement__"];
 						_setItemValue(el, curVal, propertyName, forse);
 					})
 				}
-				else _setItemValue(element, curProp_value, propertyName, forse);
+				else _setItemValue(_element, curProp_value, propertyName, forse);
 			}
 		}
 	}
@@ -409,19 +406,19 @@ global.microdataTemplate = new function() {
 		
 		if(Array.isArray(data) || (itemElement.getAttribute("itemprop") || "").substr(-2) === "[]") {
 			var first = true, el, _itemprop;
-			$A(data).forEach(function(curData) {//Принудительно приведём к массиву и пробежимся по нему
+			Array["from"](data).forEach(function(curData) {//Принудительно приведём к массиву и пробежимся по нему
 				if(first) {
-					itemElement.__templateElement__ = _documentFragment.appendChild(itemElement.cloneNode(true));
+					itemElement["__templateElement__"] = _documentFragment.appendChild(itemElement.cloneNode(true));
 					thisObj.setItem(itemElement, curData, forse);
 					
 					first = false;
 					return;
 				}
-				el = itemElement.parentNode.insertAfter(
-					itemElement.__templateElement__.cloneNode(true),
-					itemElement._lastInsertedNode || itemElement);
+				el = itemElement.parentNode["insertAfter"](
+					itemElement["__templateElement__"].cloneNode(true),
+					/*itemElement._lastInsertedNode || */itemElement);
 					
-				el.__templateElement__ = itemElement.__templateElement__;
+				el["__templateElement__"] = itemElement["__templateElement__"];
 				thisObj.setItem(el, curData, forse);
 			})
 			
@@ -433,9 +430,9 @@ global.microdataTemplate = new function() {
 		//thisObj.setProperty(itemElement, "", data, forse);
 
 		try {
-			if(itemElement.properties){
-				$A(itemElement.properties).forEach(function(DOMElement) {
-					$A(DOMElement.itemProp).forEach(function(name) {
+			if(itemElement["properties"]){
+				Array["from"](itemElement["properties"]).forEach(function(DOMElement) {
+					Array["from"](DOMElement["itemProp"]).forEach(function(name) {
 						try {
 							if(DOMElement.getAttribute("itemscope") != null && data[name]) {
 								thisObj.setItem(DOMElement, data[name], forse);
@@ -452,7 +449,7 @@ global.microdataTemplate = new function() {
 				})
 			}
 			else {
-				if(DEBUG)Log.err("The is no 'properties' property in element")
+				if(DEBUG)console.error("The is no 'properties' property in element")
 			}
 		}
 		catch(e) {
@@ -511,7 +508,7 @@ global.microdataTemplate = new function() {
 /*(function fixPrototypes(global) {
 	if(fixPrototypes.fixed)return;
 
-	function $addEventListener(elt, event, listener) {
+	function Array["from"]ddEventListener(elt, event, listener) {
 		if(document.addEventListener)
 			elt.addEventListener(event, listener, false);
 		else
@@ -519,8 +516,8 @@ global.microdataTemplate = new function() {
 	}
 	
 	if(!global["PropertyNodeList"]) {
-		$addEventListener(global, "DOMContentLoaded", fixPrototypes.bind(global, global)),
-			$addEventListener(global, "load", fixPrototypes.bind(global, global))
+		Array["from"]ddEventListener(global, "DOMContentLoaded", fixPrototypes.bind(global, global)),
+			Array["from"]ddEventListener(global, "load", fixPrototypes.bind(global, global))
 	}
 	else {
 		PropertyNodeList.prototype.test = "123"
