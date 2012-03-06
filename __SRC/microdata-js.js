@@ -28,6 +28,10 @@ var INCLUDE_EXTRAS = true;//Set it ti 'true' if you need Extra behaviors
 ;(function(global, fixPrototypes) {
 
 "use strict";
+
+//import
+var DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
+
 var _formElements = ['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT'],
 	_multimediaElement = ['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'],
 	_linkElement = ["A","AREA","LINK"],
@@ -75,11 +79,64 @@ var _formElements = ['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT
 				elementName === 'TIME' && element.getAttribute('datetime') ? "dateTime" ://TODO:: Check element.dateTime in IE[7,6]
 				"innerHTML"] = value;
 		}
+	},
+	get__DOMStringCollection_property = function(thisObj, attributeName) {
+		if(!thisObj["_"])thisObj["_"] = {};
+		var value = thisObj.getAttribute(attributeName),
+			_ = thisObj["_"]["_mcrdt_"] || (thisObj["_"]["_mcrdt_"] = {}),
+			_currentValue = _[attributeName];
+		
+		if(!_currentValue) {
+			_currentValue = _[attributeName] = new DOMStringCollection_(value, function() {
+				thisObj.setAttribute(attributeName, this + "");
+			});
+		}
+		else if(value !== null && _currentValue + "" !== value) {
+			_currentValue.update(value);
+		}
+		
+		return _currentValue;
+	},
+	__itemTypeProperty = {
+		"get" : function() {
+			return get__DOMStringCollection_property(this, "itemtype")
+		},
+		"set" : function(val) {
+			return this.setAttribute("itemtype", val + "")
+		}
+	},
+	__getItems__ = function(itemTypes) {
+		var items = 
+				//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
+					$$("[itemscope]", this),
+			matches = [],
+			_itemTypes = (itemTypes || "").trim().split(/\s+/),
+			node,
+			i = -1;
+		
+		while(node = items[++i]) {
+			var typeString = node.getAttribute('itemtype') || "",
+				types = typeString.split(/\s+/),
+				_curType,
+				accept;
+			
+			accept = !(typeString &&
+				!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
+					(!("itemScope" in node) || node["itemScope"]));//writing to the itemScope property must affect whether the element is returned by getItems;
+			
+			while(!accept && (_curType = types.pop()))
+				(accept = ~_itemTypes.indexOf(_curType)) &&
+					matches.push(node);
+		}
+		
+		return matches;
 	};
 
 if(INCLUDE_EXTRAS) {
 	fixPrototypes.__itemValueProperty = __itemValueProperty;
+	fixPrototypes.__itemTypeProperty = __itemTypeProperty;
 	fixPrototypes._formElements = _formElements;
+	fixPrototypes.__getItems__ = __getItems__;
 }
 	
 (
@@ -89,8 +146,6 @@ if(INCLUDE_EXTRAS) {
 	 * @param {Window|Object} global The global object
 	 */
 	function(global) {
-		//import
-		var DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
 		
 		if(!global["PropertyNodeList"]) {
 		// --- === PropertyNodeList CLASS [BEGIN] === ---
@@ -238,21 +293,7 @@ if(INCLUDE_EXTRAS) {
 			"itemValue" : __itemValueProperty,
 			"itemProp" : {
 				"get" : function() {
-					var itempropValue = this.getAttribute("itemprop"),
-						thisObj = this;
-					
-					if(!thisObj["_"])thisObj["_"] = {};
-					
-					if(!thisObj["_"].lastitemprop) {
-						thisObj["_"].lastitemprop = new DOMStringCollection_(itempropValue, function() {
-							thisObj.setAttribute("itemprop", this + "");
-						});
-					}
-					else if(itempropValue !== null && thisObj["_"].lastitemprop + "" !== itempropValue) {
-						thisObj["_"].lastitemprop.update(itempropValue);
-					}
-					
-					return thisObj["_"].lastitemprop;
+					return get__DOMStringCollection_property(this, "itemprop")
 				},
 				"set" : function(val) {
 					return this.setAttribute("itemprop", val)
@@ -282,32 +323,10 @@ if(INCLUDE_EXTRAS) {
 					return this.setAttribute("itemid", val + "")
 				}
 			},
-			"itemType" : {
-				"get" : function() {
-					return (this.getAttribute("itemtype") || "")
-				},
-				"set" : function(val) {
-					return this.setAttribute("itemtype", val + "")
-				}
-			},
+			"itemType" : __itemTypeProperty,
 			"itemRef" : {
 				"get" : function() {
-					var itemrefValue = this.getAttribute("itemref"),
-						thisObj = this;
-					
-					if(!thisObj["_"])thisObj["_"] = {};
-					
-					if(!thisObj["_"].lastitemref) {
-						thisObj["_"].lastitemref = new DOMStringCollection_(itemrefValue, function() {
-							thisObj.setAttribute("itemref", this + "");
-						});
-					}
-					else if(itemrefValue !== null && thisObj["_"].lastitemref + "" !== itemrefValue) {
-						thisObj["_"].lastitemref.update(itemrefValue);
-					}
-					
-					return thisObj["_"].lastitemref;
-					
+					return get__DOMStringCollection_property(this, "itemref")
 				},
 				"set" : function(val) {
 					return this.setAttribute("itemref", val + "")
@@ -317,15 +336,16 @@ if(INCLUDE_EXTRAS) {
 				"get" : function() {
 					var thisObj = this;
 					
-					if(!thisObj["_"])thisObj["_"] = {};					
+					if(!thisObj["_"])thisObj["_"] = {};
+					var _ = thisObj["_"]["_mcrdt_"] || (thisObj["_"]["_mcrdt_"] = {});
 					
-					var properties = thisObj["_"]._properties_CACHE__;
+					var properties = _._properties_CACHE__;
 					
 					if(properties) {
 						if(!global["microdata_liveProperties"])return properties;
 						else properties._clear();
 					}
-					else properties = thisObj["_"]._properties_CACHE__ = new HTMLPropertiesCollection();
+					else properties = _._properties_CACHE__ = new HTMLPropertiesCollection();
 					
 					var pending = [],
 						props = [],
@@ -356,6 +376,12 @@ if(INCLUDE_EXTRAS) {
 						if (pending.indexOf(candidate) !== index &&
 							pending.indexOf(candidate, index) !== -1)
 							return false;
+						
+						// TODO:: add test case for <s id=test itemscope itemref=t><s itemscope itemprop=a><s id=t itemscope itemprop=a><s itemprop=a>1</a></a></a></a>
+						// test.properties['a'].length === 2
+						// If item set by reference -> approve item
+						if(candidate["id"] && references.indexOf(candidate["id"]) !== -1)
+							return true;
 
 						while((parent = parent.parentNode) !== null && parent.nodeType === 1) {
 							ancestors.push(parent);
@@ -450,65 +476,7 @@ if(INCLUDE_EXTRAS) {
 		 * @param {string} itemTypes - whitespace-separated string of types to match
 		 * @this {Document|DocumentFragment}
 		 */
-		document["getItems"] = function(itemTypes) {
-		
-			/*
-			var selector=itemTypes.split(" ").map(function(t){
-				return '[itemtype~="'+t.replace(/"/g, '\\"')+'"]'
-			})
-			*/
-			
-			/*
-			"Redefine itemtype='' to allow multiple types if they share the same vocabulary"
-			http://html5.org/tools/web-apps-tracker?from=6667&to=6668
-			
-			Эта версия поддерживает несколько значений в itemType. Например: <div id="test" itemscope itemtype="f.ru/test1 f.ru/test2">,  document.getItems("f.ru/test1") - бедет найден div#test
-			Но похоже, что Opera 12 не поддерживает несколько значений в itemType :( TODO:: выяснить, как в спецификации
-			
-			var items = 
-					//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
-						$$("[itemscope]", this),
-				matches = [],
-				_itemTypes = (itemTypes || "").trim().split(/\s+/),
-				node,
-				i = -1;
-			
-			while(node = items[++i]) {
-				var typeString = node.getAttribute('itemtype') || "",
-					types = typeString.split(/\s+/),
-					_curType,
-					accept;
-				
-				accept = !(typeString &&
-					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
-						(!("itemScope" in node) || node["itemScope"]));//writing to the itemScope property must affect whether the element is returned by getItems;
-				
-				while(_curType = types.pop() && !accept)
-					(accept = !~_itemTypes.indexOf(_curType)) &&
-						matches.push(node);
-			}*/
-		
-		
-			var isitemTypes = !!itemTypes,
-				_itemTypes = (itemTypes || "").trim().split(/\s+/);
-			
-			
-			var items = document.querySelectorAll("[itemscope]"),
-				matches = [];
-
-			for(var i = 0, l = items.length ; i < l ; ++i) {
-				var node = items[i],
-					type = node.getAttribute('itemtype');
-
-				if((!isitemTypes || ~_itemTypes.indexOf(type)) &&
-					!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
-					(!("itemScope" in node) || node["itemScope"])) {//writing to the itemScope property must affect whether the element is returned by getItems
-					matches.push(node);
-				}
-			}
-			
-			return matches;
-		}
+		document["getItems"] = __getItems__;
 		
 		//Fixing
 		if(INCLUDE_EXTRAS)fixPrototypes(global);
@@ -576,7 +544,17 @@ if(INCLUDE_EXTRAS) {
 			return result;
 		}
 		
-		var _a;
+		var _a,
+			test_input = document.createElement("input");
+		
+		//Fix old Opera Microdata.itemtype implimentation
+		test_input["itemProp"] = "";
+		test_input["itemScope"] = true;
+		test_input["itemType"] = "t";
+		if(typeof test_input["itemType"] == "string") {
+			Object.defineProperty(global["Node"].prototype, "itemType", fixPrototypes.__itemTypeProperty);
+			HTMLDocument.prototype["getItems"] = fixPrototypes.__getItems__;
+		}
 		
 		if(!(_a = global["PropertyNodeList"])) {
 			//Strange behavior in Opera 12 - HTMLPropertiesCollection and PropertyNodeList  constructors available only when it realy need - when <el>.property and <el>.property[<prop_name>]
@@ -603,10 +581,15 @@ if(INCLUDE_EXTRAS) {
 		}
 		else {
 			var _PropertyNodeList = global["PropertyNodeList"];
-			if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON = function() {
+			if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON = 
+			/**
+			 * @this {PropertyNodeList}
+			 * @return {Object} json
+			 */
+			function() {
 				var thisObj = this,
 					result = [],
-					values = thisObj["values"],
+					values = thisObj.getValues(),
 					i = -1,
 					cur;
 				
@@ -620,7 +603,7 @@ if(INCLUDE_EXTRAS) {
 				return result;
 			}
 			
-			var test_input = document.createElement("input");
+			//Fix `itemValue` with FORM elements
 			test_input["itemProp"] = "t";
 			test_input.value = "1";
 			if(test_input.value != test_input["itemValue"]) {
