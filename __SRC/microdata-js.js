@@ -16,7 +16,7 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 4
+ * @version 5
  * 
  * @required:
  *  1. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
@@ -108,7 +108,7 @@ var _formElements = ['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT
 	__getItems__ = function(itemTypes) {
 		var items = 
 				//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
-					$$("[itemscope]", this),
+					this.querySelectorAll("[itemscope]"),
 			matches = [],
 			_itemTypes = (itemTypes || "").trim().split(/\s+/),
 			node,
@@ -172,18 +172,6 @@ if(INCLUDE_EXTRAS) {
 				thisObj["values"].push(prop_value)
 			}
 			/**
-			 * @param {string} p_name property name
-			 * @return {PropertyNodeList}
-			 */
-			PropertyNodeList.prototype["namedItem"] = function(p_name) {
-				//TODO:: Still don't know what code here
-			}
-			/**
-			 * @type {undefined}
-			 * For compliance with real PropertyNodeList.prototype
-			 */
-			PropertyNodeList.prototype["values"] = void 0;
-			/**
 			 * @return {Array}
 			 */
 			PropertyNodeList.prototype["getValues"] = function() {
@@ -192,7 +180,7 @@ if(INCLUDE_EXTRAS) {
 				while(el = this[++k])
 					_value.push(el["itemValue"]);
 				
-				return this["values"] = _value;//Update `values`
+				return _value;//Update `values`
 			}
 			/**
 			 * @return {string}
@@ -286,10 +274,7 @@ if(INCLUDE_EXTRAS) {
 		// ------- Extending Element.prototype ---------- //
 		// For IE < 8 support use microdata-js.ielt8.js and microdata-js.ielt8.htc
 
-		
-		// Definition IF < 8 support
-		var _HTMLElement_prototype = (global["HTMLElement"] && global["HTMLElement"].prototype || /*ie8*/global["Element"] && global["Element"].prototype);
-		if(_HTMLElement_prototype)Object.defineProperties(_HTMLElement_prototype, {
+		Object.defineProperties(global["Node"].prototype, {
 			"itemValue" : __itemValueProperty,
 			"itemProp" : {
 				"get" : function() {
@@ -305,8 +290,6 @@ if(INCLUDE_EXTRAS) {
 				}, 
 				"set" : function(val) {
 					val ? this.setAttribute("itemscope", "") : this.removeAttribute("itemscope");
-					
-					//val === true && MicrodataJS.fixItemElement(this);
 					
 					return val;
 				}
@@ -463,14 +446,6 @@ if(INCLUDE_EXTRAS) {
 			}
 		});
 		
-		//[BUG] Prevent bug in Google Chrome:: setter do not fire on first created EMBED element
-		try {
-			var EMBED = document.createElement("EMBED");
-			EMBED["itemProp"] = "t";
-			EMBED["itemValue"] = EMBED["itemValue"] + "1";
-		}
-		catch(e) {}
-
 		/**
 		 * Gets all of the elements that have an itemType
 		 * @param {string} itemTypes - whitespace-separated string of types to match
@@ -493,9 +468,7 @@ if(INCLUDE_EXTRAS) {
 	 * @param {Window} global
 	 */
 	INCLUDE_EXTRAS && function fixPrototypes(global) {
-		//if(fixPrototypes.isfixed)return;
-		if(global["__prot_fix__isfixed"])return;
-		
+	
 		/* too difficult
 		//Adding toJSON function
 		if(!fixPrototypes.new_getItems) {
@@ -544,113 +517,118 @@ if(INCLUDE_EXTRAS) {
 			return result;
 		}
 		
-		var _a,
-			test_input = document.createElement("input");
-		
-		//Fix old Opera Microdata.itemtype implimentation
-		test_input["itemProp"] = "";
-		test_input["itemScope"] = true;
-		test_input["itemType"] = "t";
-		if(typeof test_input["itemType"] == "string") {
-			Object.defineProperty(global["Node"].prototype, "itemType", fixPrototypes.__itemTypeProperty);
-			HTMLDocument.prototype["getItems"] = fixPrototypes.__getItems__;
-		}
-		
-		if(!(_a = global["PropertyNodeList"])) {
-			//Strange behavior in Opera 12 - HTMLPropertiesCollection and PropertyNodeList  constructors available only when it realy need - when <el>.property and <el>.property[<prop_name>]
-			// http://jsfiddle.net/EVmfh/
+		if(!fixPrototypes.isfixed) {
+			var _a,
+				test_div = document.createElement("div"),
+				HTMLDocument_prototype = HTMLDocument.prototype;
 			
-			var orig = HTMLDocument.prototype["getItems"];
-			/**
-			 * @this {(HTMLDocument|DocumentFragment)}
-			 */
-			HTMLDocument.prototype["getItems"] = function() {
-				var test_div = document.createElement("div");
-				test_div.innerHTML = "<p itemprop='t'>1</p>";
+			//[BUGFIX] Prevent bug in Google Chrome:: setter do not fire on first created EMBED element
+			try {
+				var EMBED = document.createElement("EMBED");
+				EMBED["itemProp"] = "t";
+				EMBED["itemValue"] = EMBED["itemValue"] + "1";
+			}
+			catch(e) {}
+			
+			//[BUGFIX] Fix old Opera Microdata.itemtype implimentation
+			if(HTMLDocument_prototype["getItems"] != fixPrototypes.__getItems__) {
 				test_div["itemScope"] = true;
-				test_div["properties"]["t"][0].innerHTML = "2";
-				
-				//DEBUG:: 
-				//console.log((this.defaultView || global).location.href)
-				
-				//If 'this' is not DocumentFragment, and 'this' is a docuemnt in iFrame defaultView would be exsist
-				fixPrototypes(this.defaultView || global);//Extend prototype's
-				
-				return (this["getItems"] = orig).apply(document, arguments)
-			}
-		}
-		else {
-			var _PropertyNodeList = global["PropertyNodeList"];
-			if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON = 
-			/**
-			 * @this {PropertyNodeList}
-			 * @return {Object} json
-			 */
-			function() {
-				var thisObj = this,
-					result = [],
-					values = thisObj.getValues(),
-					i = -1,
-					cur;
-				
-				while((cur = values[++i]) != null) {
-					if(cur instanceof Element) {
-						cur = itemToJSON(cur);//if cur is not Microdata element return undefined
-					}
-					result.push(cur);
+				test_div["itemType"] = "t";
+				if(typeof test_div["itemType"] == "string") {
+					Object.defineProperty(global["Node"].prototype, "itemType", fixPrototypes.__itemTypeProperty);
+					HTMLDocument_prototype["getItems"] = fixPrototypes.__getItems__;//replace wrong implimentation
 				}
-				
-				return result;
 			}
 			
-			//Fix `itemValue` with FORM elements
-			test_input["itemProp"] = "t";
-			test_input.value = "1";
-			if(test_input.value != test_input["itemValue"]) {
-				fixPrototypes._formElements.forEach(function(_tagName) {
-					if(_tagName == "TEXTAREA")_tagName = "TextArea";
-					else _tagName = _tagName.charAt(0).toUpperCase() + _tagName.substring(1).toLowerCase();//INPUT -> Input
-					var _proto = global["HTML" + _tagName + "Element"];
-					if(_proto = _proto.prototype)
-						Object.defineProperty(_proto, "itemValue", fixPrototypes.__itemValueProperty);
-				})
-				//_a === global["PropertyNodeList"].prototype
-				_a["getValues"] = function() {//New `getValues` function worked for "Form Elements"
-					var result = [], k = -1, el;
+			if(!(_a = global["PropertyNodeList"])) {
+				//Strange behavior in Opera 12 - HTMLPropertiesCollection and PropertyNodeList  constructors available only when it realy need - when <el>.property and <el>.property[<prop_name>]
+				// http://jsfiddle.net/EVmfh/
+				if(!HTMLDocument_prototype["getItems"]["orig"]) {//prevent refix
+					var orig = HTMLDocument_prototype["getItems"];
+					/**
+					 * @this {(HTMLDocument|DocumentFragment)}
+					 */
+					HTMLDocument_prototype["getItems"] = function() {
+						test_div.innerHTML = "<p itemprop='t'>t</p>";
+						test_div["properties"]["t"][0].innerHTML = "t";
+						
+						//DEBUG:: 
+						//console.log((this.defaultView || global).location.href)
+						
+						//If 'this' is not DocumentFragment, and 'this' is a docuemnt in iFrame defaultView would be exsist
+						fixPrototypes(this.defaultView || global);//Extend prototype's
+						
+						return (this["getItems"] = orig).apply(document, arguments)
+					}
+					HTMLDocument_prototype["getItems"]["orig"] = orig;
+				}
+			}
+			else {
+				var _PropertyNodeList = global["PropertyNodeList"];
+				if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON = 
+				/**
+				 * @this {PropertyNodeList}
+				 * @return {Object} json
+				 */
+				function() {
+					var thisObj = this,
+						result = [],
+						values = thisObj.getValues(),
+						i = -1,
+						cur;
 					
-					while(el = this[++k])
-						result.push(el["itemValue"]);
+					while((cur = values[++i]) != null) {
+						if(cur instanceof Element) {
+							cur = itemToJSON(cur);//if cur is not Microdata element return undefined
+						}
+						result.push(cur);
+					}
 					
 					return result;
 				}
-				//TODO:: fix PropertyNodeList.values & PropertyNodeList.getValues()
-			}
-			
-			//Check implementation of "values" property in PropertyNodeList in browser that support Microdata
-			//Тут http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api (search: values)
-			//TODO:: Check for compliance with FINALE Microdata specification.
-			if(!("values" in _a)) {//_a === global["PropertyNodeList"]
-				_a.__defineGetter__("values", //_a === global["PropertyNodeList"].prototype
-					_a["getValues"]
-				);
-			}
-			
-			_a = global["HTMLPropertiesCollection"];
-			if(!(_a = _a.prototype).toJSON)_a.toJSON = function() {
-				var thisObj = this,
-					result = {},
-					names = thisObj["names"],
-					i = -1,
-					cur;
 				
-				while(cur = names[++i])
-					if(thisObj[cur] instanceof _PropertyNodeList)
-						result[cur] = thisObj[cur].toJSON();
+				//Fix `itemValue` with FORM elements
+				var test_input = document.createElement("input");
+				test_input["itemProp"] = "t";
+				test_input["itemScope"] = false;
+				test_input.value = "1";
+				if(test_input.value != test_input["itemValue"]) {
+					fixPrototypes._formElements.forEach(function(_tagName) {
+						if(_tagName == "TEXTAREA")_tagName = "TextArea";
+						else _tagName = _tagName.charAt(0).toUpperCase() + _tagName.substring(1).toLowerCase();//INPUT -> Input
+						var _proto = global["HTML" + _tagName + "Element"];
+						if(_proto = _proto.prototype)
+							Object.defineProperty(_proto, "itemValue", fixPrototypes.__itemValueProperty);
+					})
+					//_a === global["PropertyNodeList"].prototype
+					_a["getValues"] = function() {//New `getValues` function worked for "Form Elements"
+						var result = [], k = -1, el;
+						
+						while(el = this[++k])
+							result.push(el["itemValue"]);
+						
+						return result;
+					}
+					//TODO:: fix PropertyNodeList.values & PropertyNodeList.getValues()
+				}
+				
+				_a = global["HTMLPropertiesCollection"];
+				if(!(_a = _a.prototype).toJSON)_a.toJSON = function() {
+					var thisObj = this,
+						result = {},
+						names = thisObj["names"],
+						i = -1,
+						cur;
+					
+					while(cur = names[++i])
+						if(thisObj[cur] instanceof _PropertyNodeList)
+							result[cur] = thisObj[cur].toJSON();
+				
+					return result;
+				}
 			
-				return result;
+				fixPrototypes.isfixed = true;
 			}
-		
-			fixPrototypes.isfixed = true;
 		}
 		
 		if(!fixPrototypes.fixedDocumentFragment) {
