@@ -6,16 +6,18 @@
 
 ## Example
 
-    var img = document.createElement("img");
-    img.itemProp = "test";
-    img.src = "http://example.org/example.jpg";
-    img.itemValue == img.src;//True
-	
-    var div = document.createElement("div");
-    div.appendChild(p);
-    div.itemScope = true;
-    div.innerHTML = "<div><span><p itemprop=test>some test</p></span></div>";
-    div.properties["test"][0].itemValue;//"some test"
+```javascript
+var img = document.createElement("img");
+img.itemProp = "test";
+img.src = "http://example.org/example.jpg";
+img.itemValue == img.src;//True
+
+var div = document.createElement("div");
+div.appendChild(p);
+div.itemScope = true;
+div.innerHTML = "<div><span><p itemprop=test>some test</p></span></div>";
+div.properties["test"][0].itemValue;//"some test"
+```
 		
 More examples in `example` folder
 
@@ -36,25 +38,31 @@ More examples in `example` folder
  - For modern browsers and IE8+:
   1. First add ES5 and DOM shim (for now only this shim supported: https://github.com/termi/ES5-DOM-SHIM/)
 
-            <script src="a.js"></script>
+```html
+<script src="a.js"></script>
+```
 
   2. When add microdata script
 
-            <script src="microdata-js.js"></script>
+```html
+<script src="microdata-js.js"></script>
+```
 
  - For IE6+ support:
   1. Add ES5 and DOM shim and microdata script as:
 
-			<!--[if lt IE 9]>
-			<script src="a.ie8.js"></script>
-			<![endif]-->
-			<!--[if lt IE 8]>
-			<script src="a.ielt8.js"></script>
-            <script src="microdata-js.ielt8.js"></script>
-			<![endif]-->
-			<script src="a.js"></script>
-            <script src="microdata-js.js"></script>
-	
+```html
+<!--[if lt IE 8]>
+<script src="a.ielt8.js"></script>
+<script src="microdata-js.ielt8.js"></script>
+<![endif]-->
+<!--[if IE 8]>
+<script src="a.ie8.js"></script>
+<![endif]-->
+<script src="a.js"></script>
+<script src="microdata-js.js"></script>
+```
+
   3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `a.ie6.ielt8.htc` (for IE6) and `microdata-js.ielt8.htc` to the root of your site
 
 ## EXTRAs

@@ -16,32 +16,187 @@
  * 2. https://github.com/Treesaver/treesaver/blob/2180bb01e3cdb87811d1bd26bc81af020c1392bd/src/lib/microdata.js
  * 3. http://www.w3.org/TR/html5/microdata.html
  *
- * @version 5
+ * @version 5.9
  * 
  * @required:
- *  1. Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
+ *  1. INCLUDE_DOMSTRINGCOLLECTION=true or Utils.Dom.DOMStringCollection (DOMSettableTokenList like object)
  */
 
 /** @define {boolean} */
-var INCLUDE_EXTRAS = true;//Set it ti 'true' if you need Extra behaviors
+var INCLUDE_EXTRAS = true;//Set it to 'true' if you need Extra behaviors
+/** @define {boolean} */
+var INCLUDE_DOMSTRINGCOLLECTION = false;
  
 ;(function(global, fixPrototypes) {
 
 "use strict";
 
-//import
-var DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
+var DOMStringCollection_;
+if(INCLUDE_DOMSTRINGCOLLECTION) {
+	var _append = function(obj, ravArgs) {
+			for(var i = 1; i < arguments.length; i++) {
+				var extension = arguments[i];
+				for(var key in extension)
+					if(Object.prototype.hasOwnProperty.call(extension, key) &&
+					   (!Object.prototype.hasOwnProperty.call(obj, key))
+					  )obj[key] = extension[key];
+			}
 
-var _formElements = ['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT'],
-	_multimediaElement = ['AUDIO', 'EMBED', 'IFRAME', 'IMG', 'SOURCE', 'TRACK', 'VIDEO'],
-	_linkElement = ["A","AREA","LINK"],
-	_throwDOMException = function(errStr) {
+			return obj;
+		}
+
+		/** @type {RegExp} @const */
+	  , RE_DOMSettableTokenList_lastSpaces = /\\s+$/g
+		/** @type {RegExp} @const */
+	  , RE_DOMSettableTokenList_spaces = /\\s+/g
+
+		/**
+		 * @param {DOMStringCollection_} _DOMStringCollection
+		 * @param {string} _string
+		 */
+	  , DOMStringCollection_init = function(_DOMStringCollection, _string) {
+			var thisObj = _DOMStringCollection,
+				string = _string || "",//default value
+				isChange = !!thisObj.length;
+
+			if(isChange) {
+				while(thisObj.length > 0)
+					delete thisObj[--thisObj.length];
+
+				thisObj.value = "";
+			}
+
+			if(string) {
+				if(string = string.trim()) {
+					string.split(RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init_add, thisObj);
+				}
+				thisObj.value = _string;//empty value should stringify to contain the attribute's whitespace
+			}			
+
+			if(isChange && thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value);
+		}
+
+		/**
+		 * @param {string} token
+		 * @this {DOMStringCollection_}
+		 */
+	  , DOMStringCollection_init_add = function(token) {
+			this[this.length++] = token;
+		}
+	;
+	/**
+	 * __Non-standart__
+	 * Utils.Dom.DOMStringCollection
+	 * DOMSettableTokenList like object
+	 * http://www.w3.org/TR/html5/common-dom-interfaces.html#domsettabletokenlist-0
+	 * @param {Function} getter callback for onchange event
+	 * @param {Function} setter callback for onchange event
+	 * @param {Object} object_this context of onchange function
+	 * @constructor
+	 */
+	DOMStringCollection_ = function(getter, setter, object_this) {
+		/**
+		 * Event fired when any change apply to the object
+		 */
+		this._getter = getter;
+		this._setter = setter;
+		this._object_this = object_this;
+		this.length = 0;
+		this.value = "";
+
+		this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
+	}
+
+	_append(DOMStringCollection_.prototype, {
+		DOMStringCollection_check_currentValue_and_Token : function(token) {
+			var string = this._getter.call(this._object_this);
+			if(string != this.value)DOMStringCollection_init(this, string);
+
+			if(token === "")_throwDOMException("SYNTAX_ERR");
+			if(~(token + "").indexOf(" "))_throwDOMException("INVALID_CHARACTER_ERR");
+		},
+		"add": function(token) {
+			var thisObj = this, v = thisObj.value;
+
+			if(thisObj.contains(token)//DOMStringCollection_check_currentValue_and_Token(token) here
+				)return;
+
+			thisObj.value += ((v && !v.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
+
+			this[this.length++] = token;
+
+			if(thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value);
+		},
+		"remove": function(token) {
+			this.DOMStringCollection_check_currentValue_and_Token(token);
+
+			var i, itemsArray, thisObj = this;
+
+			thisObj.value = thisObj.value.replace(new RegExp("((?:\ +|^)" + token + "(?:\ +|$))", "g"), function(find, p1, offset, string) {
+				return offset && find.length + offset < string.length ? " " : "";
+			});
+
+			itemsArray = _String_split.call(thisObj.value, " ");
+
+			for(i = thisObj.length - 1 ; i > 0  ; --i) {
+				if(!(thisObj[i] = itemsArray[i])) {
+					thisObj.length--;
+					delete thisObj[i];
+				}
+			}
+
+			if(thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value)
+		},
+		"contains": function(token) {
+			this.DOMStringCollection_check_currentValue_and_Token(token);
+
+			return !!~(" " + this.value + " ").indexOf(" " + token + " ");
+		},
+		"item": function(index) {
+			this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
+
+			return this[index] || null;
+		},
+		"toggle": function(token) {
+			var result = thisObj.contains(token); //DOMStringCollection_checkToken(token) here;
+
+			this[result ? 'add' : 'remove'](token);
+
+			return result;
+		}
+	});
+
+	DOMStringCollection_.prototype.toString = function() {//_append function do not overwrite Object.prototype.toString
+		return this.value || ""
+	};
+}
+else {
+	//import
+	DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
+}
+
+
+
+
+
+
+
+
+var 
+	_formElements = {'INPUT' : void 0, 'TEXTAREA' : void 0, 'PROGRESS' : void 0, 'METER' : void 0, 'SELECT' : void 0, 'OUTPUT' : void 0}
+
+  , _multimediaElement = {'AUDIO' : void 0, 'EMBED' : void 0, 'IFRAME' : void 0, 'IMG' : void 0, 'SOURCE' : void 0, 'TRACK' : void 0, 'VIDEO' : void 0}
+
+  , _linkElement = {"A" : void 0, "AREA" : void 0, "LINK" : void 0}
+
+  , _throwDOMException = function(errStr) {
 		var ex = Object.create(DOMException.prototype);
 		ex.code = DOMException[errStr];
 		ex.message = errStr +': DOM Exception ' + ex.code;
 		throw ex;
-	},
-	__itemValueProperty = {
+	}
+
+  , __itemValueProperty = {
 		"get" : function() {
 			var element = this,
 				elementName = element.nodeName;
@@ -49,11 +204,11 @@ var _formElements = ['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT
 			return element.getAttribute("itemscope") !== null ? element :
 				element.getAttribute("itemprop") === null ? null :
 				
-				INCLUDE_EXTRAS && (~_formElements.indexOf(elementName)) ? element.value ://Non-standart !!!
+				INCLUDE_EXTRAS && elementName in _formElements ? element.value ://Non-standart !!!
 				
 				elementName === "META" ? element.content :
-				~_multimediaElement.indexOf(elementName) ? element.src :
-				~_linkElement.indexOf(elementName) ? element.href :
+				elementName in _multimediaElement ? element.src :
+				elementName in _linkElement ? element.href :
 				elementName === "OBJECT" ? element.data :
 				elementName === "TIME" && element.getAttribute("datetime") ? element.dateTime ://TODO:: Check element.dateTime in IE[7,6]
 				"textContent" in element ? element.textContent :
@@ -70,67 +225,65 @@ var _formElements = ['INPUT', 'TEXTAREA', 'PROGRESS', 'METER', 'SELECT', 'OUTPUT
 			}
 
 			return element[
-				INCLUDE_EXTRAS && (~_formElements.indexOf(elementName)) ? "value" ://Non-standart !!!
+				INCLUDE_EXTRAS && elementName in _formElements ? "value" ://Non-standart !!!
 				
 				elementName === 'META' ? "content" :
-				~_multimediaElement.indexOf(elementName) ? "src" :
-				~_linkElement.indexOf(elementName) ? "href" :
+				elementName in _multimediaElement ? "src" :
+				elementName in _linkElement ? "href" :
 				elementName === 'OBJECT' ? "data" :
 				elementName === 'TIME' && element.getAttribute('datetime') ? "dateTime" ://TODO:: Check element.dateTime in IE[7,6]
 				"innerHTML"] = value;
 		}
-	},
-	get__DOMStringCollection_property = function(thisObj, attributeName) {
+	}
+
+  , get__DOMStringCollection_property = function(thisObj, attributeName) {
 		if(!thisObj["_"])thisObj["_"] = {};
 		var value = thisObj.getAttribute(attributeName),
 			_ = thisObj["_"]["_mcrdt_"] || (thisObj["_"]["_mcrdt_"] = {}),
 			_currentValue = _[attributeName];
 		
 		if(!_currentValue) {
-			_currentValue = _[attributeName] = new DOMStringCollection_(value, function() {
+			_currentValue = _[attributeName] = new DOMStringCollection_(function() {
+				return thisObj.getAttribute(attributeName);
+			}, function() {
 				thisObj.setAttribute(attributeName, this + "");
-			});
+			}, thisObj);
 		}
 		else if(value !== null && _currentValue + "" !== value) {
-			_currentValue.update(value);
+			try {
+				//tuche DOMStringCollection to forse update
+				_currentValue.add("");
+			}
+			catch(_e_) {
+
+			}
 		}
 		
 		return _currentValue;
-	},
-	__itemTypeProperty = {
+	}
+
+  , __itemTypeProperty = {
 		"get" : function() {
-			return get__DOMStringCollection_property(this, "itemtype")
-		},
+			return get__DOMStringCollection_property(this, "itemtype")	
+		},		
 		"set" : function(val) {
-			return this.setAttribute("itemtype", val + "")
+			return this.setAttribute("itemtype", val + ""), val
 		}
-	},
-	__getItems__ = function(itemTypes) {
-		var items = 
-				//Не работает в ie6!!! (browser.msie && browser.msie < 8) ? $$(".__ielt8_css_class_itemscope__", this) ://Only for IE < 8 for increase performance //requared microdata-js.ielt8.htc
-					this.querySelectorAll("[itemscope]"),
-			matches = [],
-			_itemTypes = (itemTypes || "").trim().split(/\s+/),
-			node,
-			i = -1;
-		
-		while(node = items[++i]) {
-			var typeString = node.getAttribute('itemtype') || "",
-				types = typeString.split(/\s+/),
-				_curType,
-				accept;
-			
-			accept = !(typeString &&
-				!node.getAttribute("itemprop") && //Item can't contain itemprop attribute
-					(!("itemScope" in node) || node["itemScope"]));//writing to the itemScope property must affect whether the element is returned by getItems;
-			
-			while(!accept && (_curType = types.pop()))
-				(accept = ~_itemTypes.indexOf(_curType)) &&
-					matches.push(node);
-		}
-		
-		return matches;
-	};
+	}
+
+	/**
+	 * Gets all of the elements that have an itemType
+	 * @param {string} itemTypes - whitespace-separated string of types to match
+	 * @this {Document|DocumentFragment}
+	 */
+  , __getItems__ = function(itemTypes) {
+		return this.querySelectorAll(itemTypes ? itemTypes.trim().split(/\s+/).map(function(_itemType) {
+			return "[itemscope][itemtype='" + _itemType + "']"
+		}).join(",") : "")
+	}
+;
+
+
 
 if(INCLUDE_EXTRAS) {
 	fixPrototypes.__itemValueProperty = __itemValueProperty;
@@ -138,6 +291,8 @@ if(INCLUDE_EXTRAS) {
 	fixPrototypes._formElements = _formElements;
 	fixPrototypes.__getItems__ = __getItems__;
 }
+
+
 	
 (
 !document["getItems"] ?
@@ -146,144 +301,157 @@ if(INCLUDE_EXTRAS) {
 	 * @param {Window|Object} global The global object
 	 */
 	function(global) {
-		
-		if(!global["PropertyNodeList"]) {
 		// --- === PropertyNodeList CLASS [BEGIN] === ---
-			/**
-			 * @constructor
-			 */
-			var PropertyNodeList = global["PropertyNodeList"] = function () {
-				var thisObj = this;
+		/**
+		 * @constructor
+		 */
+		var _PropertyNodeList = function () {
+			var thisObj = this;
 
-			/* PUBLICK */
-				/** @type {number} */
-				thisObj["length"] = 0;
-				/** @type {Array} "values" property http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api */
-				thisObj["values"] = [];
-			}
-			/**
-			 * Non-standart (not in native PropertyNodeList class) method
-			 * @param {Element} newNode DOM-element to add
-			 */
-			PropertyNodeList.prototype["_push"] = function(newNode, prop_value) {
-				var thisObj = this;
-				
-				thisObj[thisObj["length"]++] = newNode;
-				thisObj["values"].push(prop_value)
-			}
-			/**
-			 * @return {Array}
-			 */
-			PropertyNodeList.prototype["getValues"] = function() {
-				var _value = [], k = -1, el;
-				
-				while(el = this[++k])
-					_value.push(el["itemValue"]);
-				
-				return _value;//Update `values`
-			}
-			/**
-			 * @return {string}
-			 */
-			PropertyNodeList.prototype.toString = function() {
-				return "[object PropertyNodeList]";
-			}
+		/* PUBLICK */
+			/** @type {number} */
+			thisObj["length"] = 0;
+			/** @type {Array} "values" property http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api */
+			thisObj["values"] = [];
+		};
+		/**
+		 * Non-standart (not in native _PropertyNodeList class) method
+		 * @param {Element} newNode DOM-element to add
+		 */
+		_PropertyNodeList.prototype["_push"] = function(newNode, prop_value) {
+			var thisObj = this;
 			
+			thisObj[thisObj["length"]++] = newNode;
+			thisObj["values"].push(prop_value)
+		};
+		/**
+		 * @return {Array}
+		 */
+		_PropertyNodeList.prototype["getValues"] = function() {
+			var _value = [], k = -1, el;
+			
+			while(el = this[++k])
+				_value.push(el["itemValue"]);
+			
+			return _value;
+		};
+		/**
+		 * @return {string}
+		 */
+		_PropertyNodeList.prototype.toString = function() {
+			return "[object PropertyNodeList]";
+		};
 		// --- === PropertyNodeList CLASS [END] and method PropertyNodeList.prototype["item"] below === ---
-		}
-
-		if(!global["HTMLPropertiesCollection"]) {
+		
+		 
 		// --- === HTMLPropertiesCollection CLASS [BEGIN] === ---
-			/**
-			 * @constructor
-			 */
-			var HTMLPropertiesCollection = global["HTMLPropertiesCollection"] = function () {
-				var thisObj = this;
+		/**
+		 * @constructor
+		 */
+		var _HTMLPropertiesCollection = function () {
+			var thisObj = this;
 
-			/* PUBLICK */	
-				thisObj["length"] = 0;
-				//It's also possible to get a list of all the property names using the object's names IDL attribute.
-				//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
-				thisObj["names"] = [];
-			}
-			/**
-			 * Non-standart (not in native HTMLPropertiesCollection class) method
-			 * Clear HTMLPropertiesCollection
-			 */
-			HTMLPropertiesCollection.prototype._clear = function() {
-				var thisObj = this;
-				
-				for(var i in thisObj)
-					if(thisObj[i] instanceof PropertyNodeList) {
-						thisObj[i] = null;
-						delete thisObj[i];
-					}
-				
-				thisObj["length"] = 0;
-				thisObj["names"] = [];
+		/* PUBLICK */	
+			thisObj["length"] = 0;
+			//It's also possible to get a list of all the property names using the object's names IDL attribute.
+			//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
+			thisObj["names"] = [];
+		};
+
+		/**
+		 * Non-standart (not in native HTMLPropertiesCollection class) method
+		 * Clear _HTMLPropertiesCollection
+		 */
+		_HTMLPropertiesCollection.prototype._clear = function() {
+			var thisObj = this;
+			
+			for(var i in thisObj) {
+				if(thisObj[i] instanceof _PropertyNodeList || !isNaN(i)) {
+					thisObj[i] = null;
+					delete thisObj[i];
+				}
 			}
 			
-			/**
-			 * Non-standart (not in native HTMLPropertiesCollection class) method
-			 * @param {Element} newNode DOM-element to add
-			 * @param {string|Node} prop_value Microdata-property value
-			 * @param {string} name Microdata-property name
-			 */
-			HTMLPropertiesCollection.prototype["_push"] = function(newNode, prop_value, name) {
-				var thisObj = this;
-				
-				thisObj[thisObj["length"]++] = newNode;
-				
+			thisObj["length"] = 0;
+			thisObj["names"] = [];
+		};
+		
+		/**
+		 * Non-standart (not in native HTMLPropertiesCollection class) method
+		 * @param {Element} node DOM-element to add
+		 */
+		_HTMLPropertiesCollection.prototype["_push"] = function(node) {
+			var thisObj = this,
+				prop_value = node["itemValue"],
+				prop_name = node["itemProp"],
+				name,
+				k = -1;
+			
+			if(!prop_name)return;
+
+			thisObj[thisObj["length"]++] = node;
+			
+			/*if(!~thisObj["names"].indexOf(name)) {
+				thisObj["names"].push(name);
+			};*/
+			
+
+			while(name = prop_name[++k]) {
 				if(!~thisObj["names"].indexOf(name)) {
 					thisObj["names"].push(name);
 				};
 				
 				(
-					thisObj[name] || (thisObj[name] = new PropertyNodeList())
-				)["_push"](newNode, prop_value);
+					thisObj[name] || (thisObj[name] = new _PropertyNodeList())
+				)["_push"](node, prop_value);
 			}
-			/**
-			 * @param {string} p_name property name
-			 * @return {PropertyNodeList}
-			 *TODO:: Check for compliance with FINALE Microdata specification.
-			 */
-			HTMLPropertiesCollection.prototype["namedItem"] = function(p_name) {
-				return this[p_name] instanceof PropertyNodeList ? this[p_name] : new PropertyNodeList();
-			}
-			/**
-			 * @return {string}
-			 */
-			HTMLPropertiesCollection.prototype.toString = function() {
-				return "[object HTMLPropertiesCollection]";
-			}
-			/**
-			 * @param {number} index of item
-			 * @return {Element} 
-			 */
-			HTMLPropertiesCollection.prototype["item"] = PropertyNodeList.prototype["item"] = function(_index) {
-				var thisObj = this;
-				
-				if(isNaN(_index))_index = 0;
-				
-				return thisObj[_index] || null;
-			}
+		};
+
+		/**
+		 * @param {string} p_name property name
+		 * @return {_PropertyNodeList}
+		 *TODO:: Check for compliance with FINALE Microdata specification.
+		 */
+		_HTMLPropertiesCollection.prototype["namedItem"] = function(p_name) {
+			return this[p_name] instanceof _PropertyNodeList ? this[p_name] : new _PropertyNodeList();
+		};
+
+		/**
+		 * @return {string}
+		 */
+		_HTMLPropertiesCollection.prototype.toString = function() {
+			return "[object HTMLPropertiesCollection]";
+		};
+
+		/**
+		 * @param {number} index of item
+		 * @return {Element} 
+		 */
+		_HTMLPropertiesCollection.prototype["item"] = _PropertyNodeList.prototype["item"] = function(_index) {
+			var thisObj = this;
+			
+			if(isNaN(_index))_index = 0;
+			
+			return thisObj[_index] || null;
+		};
 		// --- === HTMLPropertiesCollection CLASS [END] === ---
-		}
 
 
 		// ------- Extending Element.prototype ---------- //
 		// For IE < 8 support use microdata-js.ielt8.js and microdata-js.ielt8.htc
 
-		Object.defineProperties(global["Node"].prototype, {
+		Object.defineProperties(global["Element"].prototype, {
 			"itemValue" : __itemValueProperty,
+
 			"itemProp" : {
 				"get" : function() {
-					return get__DOMStringCollection_property(this, "itemprop")
+					return get__DOMStringCollection_property(this, "itemprop");
 				},
 				"set" : function(val) {
-					return this.setAttribute("itemprop", val)
+					return this.setAttribute("itemprop", val + ""), val
 				}
 			},
+
 			"itemScope" : {
 				"get" : function() {
 					return this.getAttribute("itemscope") !== null
@@ -294,6 +462,7 @@ if(INCLUDE_EXTRAS) {
 					return val;
 				}
 			},
+
 			"itemId" : {
 				"get" : function() {
 					var val = (this.getAttribute("itemid") || "").trim();
@@ -303,18 +472,21 @@ if(INCLUDE_EXTRAS) {
 					return val;
 				},
 				"set" : function(val) {
-					return this.setAttribute("itemid", val + "")
+					return this.setAttribute("itemid", val + ""), val
 				}
 			},
+
 			"itemType" : __itemTypeProperty,
+
 			"itemRef" : {
 				"get" : function() {
-					return get__DOMStringCollection_property(this, "itemref")
+					return get__DOMStringCollection_property(this, "itemref");
 				},
 				"set" : function(val) {
-					return this.setAttribute("itemref", val + "")
+					return this.setAttribute("itemref", val + ""), val
 				}
 			},
+
 			"properties" : {
 				"get" : function() {
 					var thisObj = this;
@@ -328,7 +500,7 @@ if(INCLUDE_EXTRAS) {
 						if(!global["microdata_liveProperties"])return properties;
 						else properties._clear();
 					}
-					else properties = _._properties_CACHE__ = new HTMLPropertiesCollection();
+					else properties = _._properties_CACHE__ = new _HTMLPropertiesCollection();
 					
 					var pending = [],
 						props = [],
@@ -431,27 +603,17 @@ if(INCLUDE_EXTRAS) {
 					}
 							
 					
-					props.forEach(function(property) {
-						//The itemprop attribute, if specified, must have a value that is an unordered set of unique space-separated tokens representing the names of the name-value pairs that it adds. The attribute's value must have at least one token.
-						k = -1;
-						current = property["itemProp"];
-						while(el = current[++k])
-							properties["_push"](property, property["itemValue"], el);
-					});
+					props.forEach(properties["_push"].bind(properties));
 
 					return properties;
 				}
-					
-					
 			}
 		});
 		
-		/**
-		 * Gets all of the elements that have an itemType
-		 * @param {string} itemTypes - whitespace-separated string of types to match
-		 * @this {Document|DocumentFragment}
-		 */
+		//export
 		document["getItems"] = __getItems__;
+		if(!global["PropertyNodeList"])global["PropertyNodeList"] = _PropertyNodeList;
+		if(!global["HTMLPropertiesCollection"])global["HTMLPropertiesCollection"] = _HTMLPropertiesCollection;
 		
 		//Fixing
 		if(INCLUDE_EXTRAS)fixPrototypes(global);
@@ -468,7 +630,7 @@ if(INCLUDE_EXTRAS) {
 	 * @param {Window} global
 	 */
 	INCLUDE_EXTRAS && function fixPrototypes(global) {
-	
+		"use strict";
 		/* too difficult
 		//Adding toJSON function
 		if(!fixPrototypes.new_getItems) {
@@ -516,7 +678,7 @@ if(INCLUDE_EXTRAS) {
 			
 			return result;
 		}
-		
+
 		if(!fixPrototypes.isfixed) {
 			var _a,
 				test_div = document.createElement("div"),
@@ -535,7 +697,7 @@ if(INCLUDE_EXTRAS) {
 				test_div["itemScope"] = true;
 				test_div["itemType"] = "t";
 				if(typeof test_div["itemType"] == "string") {
-					Object.defineProperty(global["Node"].prototype, "itemType", fixPrototypes.__itemTypeProperty);
+					Object.defineProperty(global["Element"].prototype, "itemType", fixPrototypes.__itemTypeProperty);
 					HTMLDocument_prototype["getItems"] = fixPrototypes.__getItems__;//replace wrong implimentation
 				}
 			}
@@ -571,20 +733,12 @@ if(INCLUDE_EXTRAS) {
 				 * @return {Object} json
 				 */
 				function() {
-					var thisObj = this,
-						result = [],
-						values = thisObj.getValues(),
-						i = -1,
-						cur;
-					
-					while((cur = values[++i]) != null) {
+					return this.getValues().map(function(cur) {
 						if(cur instanceof Element) {
 							cur = itemToJSON(cur);//if cur is not Microdata element return undefined
 						}
-						result.push(cur);
-					}
-					
-					return result;
+						return cur;
+					});
 				}
 				
 				//Fix `itemValue` with FORM elements
@@ -593,7 +747,7 @@ if(INCLUDE_EXTRAS) {
 				test_input["itemScope"] = false;
 				test_input.value = "1";
 				if(test_input.value != test_input["itemValue"]) {
-					fixPrototypes._formElements.forEach(function(_tagName) {
+					Object.keys(fixPrototypes._formElements).forEach(function(_tagName) {
 						if(_tagName == "TEXTAREA")_tagName = "TextArea";
 						else _tagName = _tagName.charAt(0).toUpperCase() + _tagName.substring(1).toLowerCase();//INPUT -> Input
 						var _proto = global["HTML" + _tagName + "Element"];
