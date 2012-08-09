@@ -278,7 +278,7 @@ var
 	 */
   , __getItems__ = function(itemTypes) {
 		return this.querySelectorAll(itemTypes ? itemTypes.trim().split(/\s+/).map(function(_itemType) {
-			return "[itemscope][itemtype='" + _itemType + "']"
+			return "[itemscope][itemtype~='" + _itemType + "']"
 		}).join(",") : "")
 	}
 ;
