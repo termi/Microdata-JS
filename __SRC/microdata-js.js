@@ -172,7 +172,7 @@ if(INCLUDE_DOMSTRINGCOLLECTION) {
 }
 else {
 	//import
-	DOMStringCollection_ = global["Utils"]["Dom"]["DOMStringCollection"];
+	DOMStringCollection_ = global["DOMStringCollection"];
 }
 
 
@@ -219,7 +219,7 @@ var
 				elementName = element.nodeName;
 
 			if(element.getAttribute("itemprop") === null) {
-				//TODO:: check it. If no test pass return this: throw new global["Utils"]["Dom"]["DOMException"]("INVALID_ACCESS_ERR")						
+				//TODO:: check it. If no test pass return this: throw new global["DOMException"]("INVALID_ACCESS_ERR")
 			
 				_throwDOMException("INVALID_ACCESS_ERR");
 			}
@@ -298,7 +298,7 @@ if(INCLUDE_EXTRAS) {
 !document["getItems"] ?
 // 1. Microdata unsupported
 	/**
-	 * @param {Window|Object} global The global object
+	 * @param {(Window|Object)} global The global object
 	 */
 	function(global) {
 		// --- === PropertyNodeList CLASS [BEGIN] === ---
@@ -399,7 +399,7 @@ if(INCLUDE_EXTRAS) {
 			while(name = prop_name[++k]) {
 				if(!~thisObj["names"].indexOf(name)) {
 					thisObj["names"].push(name);
-				};
+				}
 				
 				(
 					thisObj[name] || (thisObj[name] = new _PropertyNodeList())
@@ -721,7 +721,7 @@ if(INCLUDE_EXTRAS) {
 						fixPrototypes(this.defaultView || global);//Extend prototype's
 						
 						return (this["getItems"] = orig).apply(document, arguments)
-					}
+					};
 					HTMLDocument_prototype["getItems"]["orig"] = orig;
 				}
 			}
@@ -739,7 +739,7 @@ if(INCLUDE_EXTRAS) {
 						}
 						return cur;
 					});
-				}
+				};
 				
 				//Fix `itemValue` with FORM elements
 				var test_input = document.createElement("input");
@@ -753,7 +753,7 @@ if(INCLUDE_EXTRAS) {
 						var _proto = global["HTML" + _tagName + "Element"];
 						if(_proto = _proto.prototype)
 							Object.defineProperty(_proto, "itemValue", fixPrototypes.__itemValueProperty);
-					})
+					});
 					//_a === global["PropertyNodeList"].prototype
 					_a["getValues"] = function() {//New `getValues` function worked for "Form Elements"
 						var result = [], k = -1, el;
@@ -762,7 +762,7 @@ if(INCLUDE_EXTRAS) {
 							result.push(el["itemValue"]);
 						
 						return result;
-					}
+					};
 					//TODO:: fix PropertyNodeList.values & PropertyNodeList.getValues()
 				}
 				
@@ -779,7 +779,7 @@ if(INCLUDE_EXTRAS) {
 							result[cur] = thisObj[cur].toJSON();
 				
 					return result;
-				}
+				};
 			
 				fixPrototypes.isfixed = true;
 			}
