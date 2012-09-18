@@ -1,4 +1,6 @@
-﻿// ==ClosureCompiler==
+﻿/** @license Microdata API polyfill | @version 6.0 | MIT License | github.com/termi */
+
+// ==ClosureCompiler==
 // @compilation_level ADVANCED_OPTIMIZATIONS
 // @warning_level VERBOSE
 // @jscomp_warning missingProperties
@@ -22,10 +24,12 @@
  *  1. INCLUDE_DOMSTRINGCOLLECTION=true or window.DOMStringCollection (DOMSettableTokenList like object)
  */
 
+// [[[|||---=== GCC DEFINES START ===---|||]]]
 /** @define {boolean} */
-var INCLUDE_EXTRAS = true;//Set it to 'true' if you need Extra behaviors
+var __GCC__INCLUDE_EXTRAS__ = true;//Set it to 'true' if you need Extra behaviors
 /** @define {boolean} */
-var INCLUDE_DOMSTRINGCOLLECTION = false;
+var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
+// [[[|||---=== GCC DEFINES END ===---|||]]]
 
 "use strict";
 
@@ -69,7 +73,7 @@ var INCLUDE_DOMSTRINGCOLLECTION = false;
 				return element.getAttribute("itemscope") !== null ? element :
 					element.getAttribute("itemprop") === null ? null :
 
-					INCLUDE_EXTRAS && elementName in _formElements ? element.value ://Non-standart !!!
+					__GCC__INCLUDE_EXTRAS__ && elementName in _formElements ? element.value ://Non-standart !!!
 
 					elementName === "META" ? element.content :
 					elementName in _multimediaElement ? element.src :
@@ -90,7 +94,7 @@ var INCLUDE_DOMSTRINGCOLLECTION = false;
 				}
 
 				return element[
-					INCLUDE_EXTRAS && elementName in _formElements ? "value" ://Non-standart !!!
+					__GCC__INCLUDE_EXTRAS__ && elementName in _formElements ? "value" ://Non-standart !!!
 
 					elementName === 'META' ? "content" :
 					elementName in _multimediaElement ? "src" :
@@ -156,7 +160,7 @@ var INCLUDE_DOMSTRINGCOLLECTION = false;
 	  , hasNative_getItems = "getItems" in document
 	;
 
-	if(INCLUDE_DOMSTRINGCOLLECTION) {
+	if(__GCC__INCLUDE_DOMSTRINGCOLLECTION__) {
 		_append = function(obj, ravArgs) {
 			for(var i = 1; i < arguments.length; i++) {
 				var extension = arguments[i];
@@ -298,7 +302,7 @@ var INCLUDE_DOMSTRINGCOLLECTION = false;
 		DOMStringCollection_ = global["DOMStringCollection"];
 	}
 
-	if(INCLUDE_EXTRAS) {
+	if(__GCC__INCLUDE_EXTRAS__) {
 		fixPrototypes = function(global) {
 
 			/* too difficult
@@ -420,7 +424,7 @@ var INCLUDE_DOMSTRINGCOLLECTION = false;
 							if(_tagName == "TEXTAREA")_tagName = "TextArea";
 							else _tagName = _tagName.charAt(0).toUpperCase() + _tagName.substring(1).toLowerCase();//INPUT -> Input
 							var _proto = global["HTML" + _tagName + "Element"];
-							if(_proto = _proto.prototype)
+							if(_proto && (_proto = _proto.prototype))
 								Object.defineProperty(_proto, "itemValue", __itemValueProperty);
 						});
 						//_a === global["PropertyNodeList"].prototype

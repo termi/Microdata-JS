@@ -1,98 +1,33 @@
 <PUBLIC:COMPONENT lightWeight="true">
-<PUBLIC:PROPERTY NAME="itemValue" GET="get_itemValue" PUT="set_itemValue" />
-<PUBLIC:PROPERTY NAME="itemProp" GET="get_itemProp" PUT="set_itemProp" />
-<PUBLIC:PROPERTY NAME="itemScope" GET="get_itemScope" PUT="set_itemScope" />
-<PUBLIC:PROPERTY NAME="itemId" GET="get_itemId" PUT="set_itemId" />
-<PUBLIC:PROPERTY NAME="itemType" GET="get_itemType" PUT="set_itemType" />
-<PUBLIC:PROPERTY NAME="itemRef" GET="get_itemRef" PUT="set_itemRef" />
-<PUBLIC:PROPERTY NAME="properties" GET="get_properties" />
-<SCRIPT>
-//@required window.Utils.Dom.DOMException
-//@required window.Utils.Dom.DOMStringCollection
-//@required HTMLPropertiesCollection
-//@required $A - toArray function
-//@required HTMLElement.classList
-//@required window.* Array functions below
-if(!Array.prototype.filter)Array.prototype.filter=window.Array.prototype.filter;
-if(!Array.prototype.indexOf)Array.prototype.indexOf=window.Array.prototype.indexOf;
-if(!Array.prototype.forEach)Array.prototype.forEach=window.Array.prototype.forEach;
-//if(!Array.prototype.every)Array.prototype.every=window.Array.prototype.every;
-if(!Array.prototype.some)Array.prototype.some=window.Array.prototype.some;
-//@required window.* Function function below
-if(!Function.prototype.bind)Function.prototype.bind=window.Function.prototype.bind;
+	<PUBLIC:PROPERTY NAME="itemValue" GET="getItemValue" PUT="setItemValue" />
+	<PUBLIC:PROPERTY NAME="itemProp" GET="getItemProp" PUT="setItemProp" />
+	<PUBLIC:PROPERTY NAME="itemScope" GET="getItemScope" PUT="setItemScope" />
+	<PUBLIC:PROPERTY NAME="itemId" GET="getItemId" PUT="setItemId" />
+	<PUBLIC:PROPERTY NAME="itemType" GET="getItemType" PUT="setItemType" />
+	<PUBLIC:PROPERTY NAME="itemRef" GET="getItemRef" PUT="setItemRef" />
+	<PUBLIC:PROPERTY NAME="properties" GET="getProperties" />
 
-var g=null,q=void 0;
+	<SCRIPT>
+		/*@requared window.Node.prototype = { ielt8 : true }*/
+		var
+			Element_proto=window.Element.prototype,
+			getItemValue=Element_proto.getitemValue,
+			setItemValue=Element_proto.setitemValue,
+			getItemProp=Element_proto.getitemProp,
+			setItemProp=Element_proto.setitemProp,
+			getItemScope=Element_proto.getitemScope,
+			setItemScope=Element_proto.setitemScope,
+			getItemId=Element_proto.getitemId,
+			setItemId=Element_proto.setitemId,
+			getItemType=Element_proto.getitemType,
+			setItemType=Element_proto.setitemType,
+			getItemRef=Element_proto.getitemRef,
+			setItemRef=Element_proto.setitemRef,
+			getProperties=Element_proto.getproperties
+		;
 
-if(!this._)this._={};
-
-function ietl8_setAttribute(el, attr, value){
-el._["__ielt8__attr_"+attr]=value;
-el.setAttribute(attr,value);
-}
-function ietl8_getAttribute(el, attr){
-var r=el._&&el._["__ielt8__attr_"+attr];
-return r===q?null:r;
-}
-
-var __getAttribute_o82hh__obj={"itemvalue":1,"itemprop":1,"itemscope":1,"itemid":1,"itemtype":1,"itemref":1};
-
-function ietl8_getAttribute2(attr){return (attr in __getAttribute_o82hh__obj)?ietl8_getAttribute(this,attr):this._.__getAttribute_o82hh__(attr)}
-
-function fixIElt8Item(item){
-if(!item._.__getAttribute_o82hh__){item._.__getAttribute_o82hh__=item.getAttribute;
-item.getAttribute=ietl8_getAttribute2}
-}
-
-// itemValue
-function get_itemValue(){var a=this.nodeName;return ietl8_getAttribute(this,"itemscope")!==
-g?this:ietl8_getAttribute(this,"itemprop")===g?g:a==="META"?this.content:~"AUDIO,EMBED,IFRAME,IMG,SOURCE,TRACK,VIDEO".split(",").indexOf(a)?this.src:~["A","AREA","LINK"].indexOf(a)?this.href:a==="OBJECT"?this.data:a==="TIME"&&this.getAttribute("datetime")?this.dateTime:"textContent"in this?this.textContent:this.innerText}
-function set_itemValue(a){
-fixIElt8Item(this);
-var d=this.nodeName;if(ietl8_getAttribute(this, "itemprop")===g)throw new window.Utils.Dom.DOMException("INVALID_ACCESS_ERR");return this[d==="META"?"content":~"AUDIO,EMBED,IFRAME,IMG,SOURCE,TRACK,VIDEO".split(",").indexOf(d)?
-"src":~["A","AREA","LINK"].indexOf(d)?"href":d==="OBJECT"?"data":d==="TIME"&&this.getAttribute("datetime")?"dateTime":"innerHTML"]=a}
-
-// itemProp
-function get_itemProp(){var a=ietl8_getAttribute(this,"itemprop"),d=this;d._["__ielt8_itemProp"]?a!==g&&d._["__ielt8_itemProp"]+""!==a&&d._["__ielt8_itemProp"].update(a):d._["__ielt8_itemProp"]=new window.Utils.Dom.DOMStringCollection(a,function(){ietl8_setAttribute(d,"itemprop",this+"")});return d._["__ielt8_itemProp"]}
-function set_itemProp(a){
-fixIElt8Item(this);
-return ietl8_setAttribute(this,"itemprop",a)}
-
-// itemScope
-function get_itemScope(){var a;return (a=ietl8_getAttribute(this,"itemscope"))!==g&&a!==undefined}
-function set_itemScope(a){
-fixIElt8Item(this);
-a!==null?ietl8_setAttribute(this,"itemscope",""):this.removeAttribute("itemscope");
-this.classList[a!==null?"add":"remove"]("__ielt8_css_class_itemscope__");
-return a}
-
-// itemId
-function get_itemId(){var a=(ietl8_getAttribute(this,"itemid")||"").trim();a&&!/\w+:(\/\/)?[\w][\w.\/]*/.test(a)&&(a=location.href.replace(/\/[^\/]*$/,"/"+escape(a)));return a}
-function set_itemId(a){
-fixIElt8Item(this);
-return ietl8_setAttribute(this,"itemid",a+"")}
-
-// itemType
-function get_itemType(){return ietl8_getAttribute(this,"itemtype")||""}
-function set_itemType(a){
-fixIElt8Item(this);
-return ietl8_setAttribute(this,"itemtype",a+"")}
-
-// itemRef
-function get_itemRef(){var a=ietl8_getAttribute(this,"itemref"),d=this;d._["__ielt8_itemRef"]?a!==g&&d._["__ielt8_itemRef"]+""!==a&&d._["__ielt8_itemRef"].update(a):d._["__ielt8_itemRef"]=new window.Utils.Dom.DOMStringCollection(a,function(){ietl8_setAttribute(d,"itemref",
-this+"")});return d._["__ielt8_itemRef"]}
-function set_itemRef(a){
-fixIElt8Item(this);
-return ietl8_setAttribute(this,"itemref",a+"")}
-
-// properties
-function get_properties(){
-var a=this._.__properties_CACHE__;
-if(a)if(window.microdata_liveProperties)a._clear();else return a;else a=this._.__properties_CACHE__=new HTMLPropertiesCollection;
-var d=[],e=[],c=[];
-for(var _i=0,_l=this.childNodes.length,_c;_i<_l;++_i)if((_c=this.childNodes[_i]).nodeType===1)d.push(_c);
-//$A(this.childNodes).forEach(function(a){a.nodeType===1&&d.push(a)});
-ietl8_getAttribute(this,"itemref")&&(c=ietl8_getAttribute(this,"itemref").trim().split(/\s+/),c.forEach(function(a){(a=document.getElementById(a))&&d.push(a)}));d=d.filter(function(a,b){var e=
-g,c=a,f=[];if(d.indexOf(a)!==b&&d.indexOf(a,b)!==-1)return false;for(;(c=c.parentNode)!==g&&c.nodeType===1;)if(f.push(c),ietl8_getAttribute(c,"itemscope")!==g){e=c;break}return e!==g?d.indexOf(e)!==-1?false:!f.some(function(a){var b=-1,c=g;if((b=d.indexOf(a))!==-1){for(a=d[b];(a=a.parentNode)!==g&&a.nodeType===1;)if(ietl8_getAttribute(a,"itemscope")!==g){c=a;break}if(c===e)return true}return false}):true});for(d.sort(function(a,b){return 3-((b.compareDocumentPosition?b.compareDocumentPosition(a):b.contains?(b!=
-a&&b.contains(a)&&16)+(b!=a&&a.contains(b)&&8)+(b.sourceIndex>=0&&a.sourceIndex>=0?(b.sourceIndex<a.sourceIndex&&4)+(b.sourceIndex>a.sourceIndex&&2):1)+0:0)&6)});c=d.pop();)ietl8_getAttribute(c,"itemprop")&&e.push(c),ietl8_getAttribute(c,"itemscope")===g&&(c=$A(c.childNodes).reverse(),c.forEach(function(a){a.nodeType===1&&d.push(a)}));e.forEach(function(b){$A(b.itemProp).forEach(a._push.bind(a,b,b.itemValue))});return a}
-</SCRIPT>
+		/*if(this != window) {//Strange IE bug where thisObj === window
+			Node_proto.__ielt8__element_init__.call(this);
+		}*/
+	</SCRIPT>
 </PUBLIC:COMPONENT>

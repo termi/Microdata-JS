@@ -5,13 +5,17 @@
 <style>
 
 </style>
-<!--[if lt IE 9]>
-<script src="http://ie7-js.googlecode.com/svn/version/2.1(beta4)/IE9.js"></script>
-<![endif]-->
+
 <!--[if lt IE 8]>
-<script src="https://raw.github.com/termi/ES5-DOM-SHIM/master/__SRC/a.ielt8.js"></script>
+<script src="../../libs/a.ielt8.js"></script>
 <![endif]-->
-<script src="https://raw.github.com/termi/ES5-DOM-SHIM/master/__SRC/a.js"></script><!-- es5-shim and $$, $A(toArray) functions -->
+<!--[if IE 8]>
+<script src="../../libs/a.ie8.js"></script>
+<![endif]-->
+<script src="../../libs/a.js"></script>
+
+
+
 <script src=../../__SRC/microdata-js.js?5></script>
 <!--[if lt IE 8]>
 <script src="../../microdata-js.ielt8.js"></script>
@@ -94,7 +98,7 @@ window.addEventListener("load", function() {
 		curData = data;
 	
 	if(chatTemplate)
-		$A(chatTemplate).forEach(function(itt) {
+		Array.from(chatTemplate).forEach(function(itt) {
 			
 			if(!(_isEmptyElement(itt)))
 				global.microdataTemplate.setItem(itt, curData);

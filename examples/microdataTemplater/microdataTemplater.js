@@ -6,6 +6,11 @@
 //closure
 ;(function(global, ajax) {
 
+//aliases
+var $ = Function.prototype.bind.call(document.getElementById, document);
+var $$ = Function.prototype.bind.call(document.querySelectorAll, document);
+var $$0 = Function.prototype.bind.call(document.querySelector, document);
+
 // ----------- =========== IE < 8 ONLY =========== -----------
 
 if(window.Node.prototype["ielt8"]) {//IE < 8 polifill
@@ -42,8 +47,10 @@ function template_document(doc) { // pass in a document as an argument
 	var elements_array = 'x-if x-elseif x-else'.split(' '),
 	a = -1;
 
-	while (++a < elements_array.length) { // loop through array
-		doc.createElement(elements_array[a]);
+	if(doc.createElement) {
+		while (++a < elements_array.length) { // loop through array
+			doc.createElement(elements_array[a]);
+		}
 	}
 
 	return doc;
@@ -381,9 +388,8 @@ function() {
 							return;
 						}
 						
-						el = _element.parentNode["insertAfter"](
-							_element.cloneNode(true),
-							/*_element._lastInsertedNode || */_element);
+						el = _element.cloneNode(true);
+						_element["after"](el);
 							
 						el["__templateElement__"] = _element["__templateElement__"];
 						_setItemValue(el, curVal, propertyName, forse);
@@ -414,9 +420,8 @@ function() {
 					first = false;
 					return;
 				}
-				el = itemElement.parentNode["insertAfter"](
-					itemElement["__templateElement__"].cloneNode(true),
-					/*itemElement._lastInsertedNode || */itemElement);
+				el = itemElement["__templateElement__"].cloneNode(true);
+				itemElement["after"](el);
 					
 				el["__templateElement__"] = itemElement["__templateElement__"];
 				thisObj.setItem(el, curData, forse);

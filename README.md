@@ -59,8 +59,10 @@ More examples in `example` folder
 <!--[if IE 8]>
 <script src="a.ie8.js"></script>
 <![endif]-->
-<script src="a.js"></script>
+<!--[if gt IE 7]><!-->
 <script src="microdata-js.js"></script>
+<!--<![endif]-->
+<script src="a.js"></script>
 ```
 
   3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `a.ie6.ielt8.htc` (for IE6) and `microdata-js.ielt8.htc` to the root of your site
@@ -78,7 +80,8 @@ TODO::
  
 ## Browsers support
 
- - Opera < 12, Google Chrome, Safary, FireFox, IE8 and IE < 8 support, and maybe others
+ - Opera < 12, Google Chrome, Safary, FireFox, IE8 and maybe others
+ - IE < 8 support with (ES/DOM shim)
 
 ## Tests
 
