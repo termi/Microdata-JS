@@ -44,7 +44,7 @@ if("getItems" in document)return;//Test for executing this script in non-IElt8 b
 if(!((window.eval && eval("/*@cc_on 1;@*/") && +((/msie (\d+)/i.exec(navigator.userAgent) || [])[1] || 0) || void 0) < 9))return;
 
 var /** @const*/
-	__URL_TO_ELEMENT_BEHAVIOR__     = '/a.ielt8.htc'
+	__URL_TO_ELEMENT_BEHAVIOR__     = '/microdata-js.ielt8.htc'
 	/** @const*/
 	, __STYLE_ID                      = "ielt8_style_prev_for_behaviour"
 	/** @const List of supporting tag names */
@@ -57,9 +57,6 @@ var prevStyle
 ;
 
 if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 polifill
-
-	__URL_TO_ELEMENT_BEHAVIOR__ = 'microdata-js.ielt8.htc';
-	__STYLE_ID="ielt8_style_prev_for_behaviour";
 
 	prevStyle = document.getElementById(__STYLE_ID);
 	add = "";
