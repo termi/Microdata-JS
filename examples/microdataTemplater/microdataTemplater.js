@@ -59,7 +59,7 @@ function template_document(doc) { // pass in a document as an argument
 if(_browser_msie < 9)template_document(document);
 
 //Исправляем для IE<9 создание DocumentFragment, для того, чтобы функция работала с элементами шаблонизатора
-if(browser.msie && browser.msie < 9) {
+if(_browser_msie < 9) {
 	var msie_CreateDocumentFragment = function() {
 		var df = msie_CreateDocumentFragment.orig.call(this);
 		return template_document(df);
