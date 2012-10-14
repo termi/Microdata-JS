@@ -10,6 +10,7 @@
 var $ = Function.prototype.bind.call(document.getElementById, document);
 var $$ = Function.prototype.bind.call(document.querySelectorAll, document);
 var $$0 = Function.prototype.bind.call(document.querySelector, document);
+var _browser_msie = window.eval && eval("/*@cc_on 1;@*/") && +((/msie (\d+)/i.exec(navigator.userAgent) || [])[1] || 0) || void 0;
 
 // ----------- =========== IE < 8 ONLY =========== -----------
 
@@ -55,14 +56,14 @@ function template_document(doc) { // pass in a document as an argument
 
 	return doc;
 } // critique: array could exist outside the function for improved performance?
-if(browser.msie && browser.msie < 9)template_document(document);
+if(_browser_msie < 9)template_document(document);
 
 //Исправляем для IE<9 создание DocumentFragment, для того, чтобы функция работала с элементами шаблонизатора
 if(browser.msie && browser.msie < 9) {
 	var msie_CreateDocumentFragment = function() {
 		var df = msie_CreateDocumentFragment.orig.call(this);
 		return template_document(df);
-	}
+	};
 	msie_CreateDocumentFragment.orig = document.createDocumentFragment;
 	
 	document.createDocumentFragment = msie_CreateDocumentFragment;
@@ -93,7 +94,7 @@ function Variable(_name, _value, _getter, _setter) {
  * @return {Object|string}
  */
 Variable.prototype.parseParams = function(paramStr) {
-	if(!paramStr)return;
+	if(!paramStr)return null;
 
 	var result = {},
 		paramStr = paramStr.split("&"),
