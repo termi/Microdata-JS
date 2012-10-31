@@ -1,7 +1,7 @@
 # Implementation of the HTML5 Microdata specification
 
 - __Spec__: http://www.whatwg.org/specs/web-apps/current-work/multipage/microdata.html
-- __Demo__: http://jsfiddle.net/cakz8/
+- __Demo__: http://jsfiddle.net/termi/Nsq27/
 - __Status__: Stable, but be carefull in IE < 9
 
 ## Example
@@ -54,15 +54,16 @@ More examples in `example` folder
 ```html
 <!--[if lt IE 8]>
 <script src="a.ielt8.js"></script>
-<script src="microdata-js.ielt8.js"></script>
-<![endif]-->
 <!--[if IE 8]>
 <script src="a.ie8.js"></script>
 <![endif]-->
+<script src="a.js"></script>
 <!--[if gt IE 7]><!-->
 <script src="microdata-js.js"></script>
 <!--<![endif]-->
-<script src="a.js"></script>
+<!--[if lt IE 8]>
+<script src="microdata-js.ielt8.js"></script>
+<![endif]-->
 ```
 
   3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `a.ie6.ielt8.htc` (for IE6) and `microdata-js.ielt8.htc` to the root of your site

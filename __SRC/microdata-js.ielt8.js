@@ -1,4 +1,4 @@
-/** @license Microdata API for IE < 8 polyfill | @version 6.0 | MIT License | github.com/termi */
+/** @license Microdata API for IE < 8 polyfill | @version 6.1 | MIT License | github.com/termi */
 
 // ==ClosureCompiler==
 // @compilation_level ADVANCED_OPTIMIZATIONS
@@ -80,11 +80,6 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 
 	var
 		DOMStringCollection_
-		/**
-		 * Fix Microdata Item Element for browsers with Microdata support
-		 * @param {Window} global
-		 */
-	  , fixPrototypes
 
 	  , _append
 
@@ -96,11 +91,11 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 
 	  , DOMStringCollection_init_add
 
-	  , _formElements = {'INPUT' : void 0, 'TEXTAREA' : void 0, 'PROGRESS' : void 0, 'METER' : void 0, 'SELECT' : void 0, 'OUTPUT' : void 0}
+	  , _formElements = {'INPUT' : null, 'TEXTAREA' : null, 'PROGRESS' : null, 'METER' : null, 'SELECT' : null, 'OUTPUT' : null}
 
-	  , _multimediaElement = {'AUDIO' : void 0, 'EMBED' : void 0, 'IFRAME' : void 0, 'IMG' : void 0, 'SOURCE' : void 0, 'TRACK' : void 0, 'VIDEO' : void 0}
+	  , _multimediaElement = {'AUDIO' : null, 'EMBED' : null, 'IFRAME' : null, 'IMG' : null, 'SOURCE' : null, 'TRACK' : null, 'VIDEO' : null}
 
-	  , _linkElement = {"A" : void 0, "AREA" : void 0, "LINK" : void 0}
+	  , _linkElement = {"A" : null, "AREA" : null, "LINK" : null}
 
 	  , _throwDOMException = function(errStr) {
 			var ex = Object.create(DOMException.prototype);
@@ -163,13 +158,8 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 				}, thisObj);
 			}
 			else if(value !== null && _currentValue + "" !== value) {
-				try {
-					//tuche DOMStringCollection to forse update
-					_currentValue.add("");
-				}
-				catch(_e_) {
-
-				}
+				//touche DOMStringCollection to force update
+				_currentValue["contains"]("fake");
 			}
 
 			return _currentValue;
@@ -190,14 +180,44 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 		 * @this {Document|DocumentFragment}
 		 */
 	  , __getItems__ = function(itemTypes) {
-			return this.querySelectorAll(itemTypes ? itemTypes.trim().split(/\s+/).map(function(_itemType) {
-				return "[itemscope][itemtype~='" + _itemType + "']"
-			}).join(",") : "")
+			var items = this.querySelectorAll("[ITEMSCOPE]")
+				, matches = []
+				, _itemTypes = itemTypes && itemTypes.trim().split(/\s+/).map(function(a){ return " " + a + " " }) || null
+				, node
+				, i = -1
+				, j
+			;
+
+			while(node = items[++i]) {
+				var typeString = " " + (node.getAttribute('itemtype') || "") + " "
+					, _curType
+					, accept
+				;
+
+				accept = !(
+					typeString
+					&& !node.getAttribute("itemprop", 1) //Item can't contain itemprop attribute
+					&& (!("itemScope" in node) || node["itemScope"])//writing to the itemScope property must affect whether the element is returned by getItems;
+				);
+
+				j = -1;
+
+				if(!_itemTypes) {
+					if(!accept) {
+						matches.push(node);
+					}
+				}
+				else {
+					while(!accept && (_curType = _itemTypes[++j])) {
+						if(accept = ~typeString.indexOf(_curType)) {
+							matches.push(node);
+						}
+					}
+				}
+			}
+
+			return matches;
 		}
-
-	  , fixPrototypes_isfixed
-
-	  , fixPrototypes_fixedDocumentFragment
 
 	  , HTMLDocument_prototype = (HTMLDocument || {}).prototype || {}
 	;
@@ -225,24 +245,27 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 		 * @param {string} _string
 		 */
 		DOMStringCollection_init = function(_DOMStringCollection, _string) {
-			var string = _string || "",//default value
-				isChange = !!_DOMStringCollection.length;
+			var thisObj = _DOMStringCollection
+				, string = _string || ""//default value
+				, isChange = !!thisObj.length
+			;
 
 			if(isChange) {
-				while(_DOMStringCollection.length > 0)
-					delete _DOMStringCollection[--_DOMStringCollection.length];
+				while(thisObj.length > 0) {
+					delete thisObj[--thisObj.length];
+				}
 
-				_DOMStringCollection.value = "";
+				thisObj["value"] = "";
 			}
 
 			if(string) {
 				if(string = string.trim()) {
-					string.split(RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init_add, _DOMStringCollection);
+					string.split(RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init_add, thisObj);
 				}
-				_DOMStringCollection.value = _string;//empty value should stringify to contain the attribute's whitespace
+				thisObj["value"] = _string;//empty value should stringify to contain the attribute's whitespace
 			}
 
-			if(isChange && _DOMStringCollection._setter)_DOMStringCollection._setter.call(_DOMStringCollection._object_this, _DOMStringCollection.value);
+			if(isChange && thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj["value"]);
 		};
 
 		/**
@@ -251,8 +274,12 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 		 */
 		DOMStringCollection_init_add = function(token) {
 			this[this.length++] = token;
-		}
-		;
+		};
+
+		DOMStringCollection_init.remove_method_helper = function(find, p1, offset, string) {
+			return offset && find.length + offset < string.length ? " " : "";
+		};
+
 		/**
 		 * __Non-standart__
 		 * Utils.Dom.DOMStringCollection
@@ -267,69 +294,97 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 			/**
 			 * Event fired when any change apply to the object
 			 */
-			this._getter = getter;
-			this._setter = setter;
-			this._object_this = object_this;
-			this.length = 0;
-			this.value = "";
+			this._getter = getter.bind(object_this);
+			this._setter = setter.bind(object_this);
+			this["length"] = 0;
+			this["value"] = "";
 
 			this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
 		};
 
 		_append(DOMStringCollection_.prototype, {
 			DOMStringCollection_check_currentValue_and_Token : function(token) {
-				var string = this._getter.call(this._object_this);
+				var string = this._getter();
 				if(string != this.value)DOMStringCollection_init(this, string);
 
 				if(token === "")_throwDOMException("SYNTAX_ERR");
 				if(~(token + "").indexOf(" "))_throwDOMException("INVALID_CHARACTER_ERR");
 			},
-			"add": function(token) {
-				var thisObj = this, v = thisObj.value;
+			"add": function() {
+				var tokens = arguments
+					, i = 0
+					, l = tokens.length
+					, token
+					, thisObj = this
+					, v = thisObj["value"]
+					, contains
+				;
 
-				if(thisObj.contains(token)//DOMStringCollection_check_currentValue_and_Token(token) here
-					)return;
+				do {
+					token = tokens[i];
+					contains = thisObj.contains(token);//DOMStringCollection_check_currentValue_and_Token(token) here
 
-				thisObj.value += ((v && !v.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
+					if(!contains){
+						v += ((i > 0 || v && !v.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
 
-				this[this.length++] = token;
+						this[this.length++] = token;
+					}
+				}
+				while(++i < l);
 
-				if(thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value);
+				thisObj["value"] = v;
+				if(thisObj._setter)thisObj._setter(thisObj["value"]);
 			},
-			"remove": function(token) {
-				this.DOMStringCollection_check_currentValue_and_Token(token);
+			"remove": function() {
+				var tokens = arguments
+					, i = 0
+					, l = tokens.length
+					, token
+					, thisObj = this
+					, v = thisObj["value"]
+					, k
+					, itemsArray = thisObj["value"].split(" ")
+				;
 
-				var i, itemsArray, thisObj = this;
+				do {
+					token = tokens[i];
 
-				thisObj.value = thisObj.value.replace(new RegExp("((?:\ +|^)" + token + "(?:\ +|$))", "g"), function(find, p1, offset, string) {
-					return offset && find.length + offset < string.length ? " " : "";
-				});
+					this.DOMStringCollection_check_currentValue_and_Token(token);
 
-				itemsArray = _String_split.call(thisObj.value, " ");
+					v = v.replace(new RegExp("((?:\\ +|^)" + token + "(?:\\ +|$))", "g"), DOMStringCollection_init.remove_method_helper);
+				}
+				while(++i < l);
 
-				for(i = thisObj.length - 1 ; i > 0  ; --i) {
-					if(!(thisObj[i] = itemsArray[i])) {
+				for(k = thisObj.length - 1 ; k > 0  ; --k) {
+					if(!(thisObj[k] = itemsArray[k])) {
 						thisObj.length--;
-						delete thisObj[i];
+						delete thisObj[k];
 					}
 				}
 
-				if(thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value)
+				thisObj["value"] = v;
+				if(thisObj._setter)thisObj._setter(thisObj["value"]);
 			},
 			"contains": function(token) {
 				this.DOMStringCollection_check_currentValue_and_Token(token);
 
-				return !!~(" " + this.value + " ").indexOf(" " + token + " ");
+				return !!~(" " + this["value"] + " ").indexOf(" " + token + " ");
 			},
 			"item": function(index) {
 				this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
 
 				return this[index] || null;
 			},
-			"toggle": function(token) {
-				var result = thisObj.contains(token); //DOMStringCollection_checkToken(token) here;
+			"toggle": function(token, forse) {
+				var thisObj = this
+					, result = thisObj.contains(token)//DOMStringCollection_checkToken(token) here;
+					, method = result ?
+						forse !== true && "remove"
+						:
+						forse !== false && "add"
+					;
 
-				this[result ? 'add' : 'remove'](token);
+				if(method)this[method](token);
 
 				return result;
 			}
@@ -479,6 +534,73 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 	};
 	// --- === HTMLPropertiesCollection CLASS [END] === ---
 
+	if(__GCC__INCLUDE_EXTRAS__) {
+		function itemToJSON(itemElement) {
+			var result
+				, i = -1
+				, cur
+			;
+
+			if(itemElement.length !== void 0) {
+				result = {"items" : []};
+
+				while(cur = itemElement[++i]) {
+					if(cur.getAttribute("itemscope", 1) !== null)//hasAttribute
+						result["items"].push(itemToJSON(cur))
+				}
+
+				return result;
+			}
+
+			if(itemElement.getAttribute("itemscope", 1) !== null) {//hasAttribute
+				result = {};
+
+				var val;
+
+				if(val = itemElement.getAttribute("itemid", 1)) {
+					result['id'] = val;
+				}
+
+				if(val = itemElement.getAttribute("itemtype", 1)) {
+					result['type'] = val;
+				}
+
+				result["properties"] = itemElement["properties"].toJSON();
+			}
+
+			return result;
+		}
+
+		/**
+		 * @this {PropertyNodeList}
+		 * @return {Object} json
+		 */
+		_PropertyNodeList.prototype["toJSON"] =	function() {
+			return this.getValues().map(function(cur) {
+				if(cur instanceof Element) {
+					cur = itemToJSON(cur);//if cur is not Microdata element return undefined
+				}
+				return cur;
+			});
+		};
+
+		_HTMLPropertiesCollection.prototype["toJSON"] = function() {
+			var thisObj = this
+				, result = {}
+				, names = thisObj["names"]
+				, i = -1
+				, cur
+			;
+
+			while(cur = names[++i]) {
+				if(thisObj[cur] instanceof _PropertyNodeList) {
+					result[cur] = thisObj[cur]["toJSON"]();
+				}
+			}
+
+			return result;
+		};
+	}
 
 	// ------- Extending Element.prototype ---------- //
 	_similar_Object_defineProperties_ = function(element_proto, props) {
@@ -510,7 +632,7 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 				return this.getAttribute("itemscope", 1) !== null
 			},
 			"set" : function(val) {
-				val ? this.setAttribute("itemscope", "", 1) : this.removeAttribute("itemscope");
+				val ? this.setAttribute("itemscope", "", 1) : this.removeAttribute("itemscope", 1);
 
 				return val;
 			}
@@ -518,14 +640,14 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 
 		"itemId" : {
 			"get" : function() {
-				var val = (this.getAttribute("itemid") || "").trim();
+				var val = (this.getAttribute("itemid", 1) || "").trim();
 
 				if(val && !/\w+:(\/\/)?[\w][\w.\/]*/.test(val))val = location.href.replace(/\/[^\/]*$/, "/" + escape(val));
 
 				return val;
 			},
 			"set" : function(val) {
-				return this.setAttribute("itemid", val + ""), val
+				return this.setAttribute("itemid", val + "", 1), val
 			}
 		},
 
@@ -536,7 +658,7 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 				return get__DOMStringCollection_property(this, "itemref");
 			},
 			"set" : function(val) {
-				return this.setAttribute("itemref", val + ""), val
+				return this.setAttribute("itemref", val + "", 1), val
 			}
 		},
 
@@ -565,8 +687,8 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 				while(el = thisObj.childNodes[++k])
 					if(el.nodeType === 1)pending.push(el);
 
-				if(thisObj.getAttribute("itemref")) {
-					references = thisObj.getAttribute("itemref").trim().split(/\s+/);
+				if(thisObj.getAttribute("itemref", 1)) {
+					references = thisObj.getAttribute("itemref", 1).trim().split(/\s+/);
 
 					references.forEach(function(reference) {
 						var element = document.getElementById(reference);
@@ -593,7 +715,7 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 
 					while((parent = parent.parentNode) !== null && parent.nodeType === 1) {
 						ancestors.push(parent);
-						if(parent.getAttribute("itemscope") !== null) {
+						if(parent.getAttribute("itemscope", 1) !== null) {
 							scope = parent;
 							break;
 						}
@@ -621,7 +743,7 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 								// Find the nearest ancestor element with an itemscope attribute
 								while((elementParent = elementParent.parentNode) !== null &&
 									elementParent.nodeType === 1) {
-									if (elementParent.getAttribute("itemscope") !== null) {
+									if (elementParent.getAttribute("itemscope", 1) !== null) {
 										elementScope = elementParent;
 										break;
 									}
@@ -641,11 +763,11 @@ if((tmp = window["Node"]) && (tmp = tmp.prototype) && tmp["ielt8"]) {//IE < 8 po
 				});
 
 				while((current = pending.pop())) {
-					if(current.getAttribute("itemprop")) {
+					if(current.getAttribute("itemprop", 1)) {
 						props.push(current);
 					}
 
-					if (current.getAttribute("itemscope") === null) {
+					if (current.getAttribute("itemscope", 1) === null) {
 						// Push all the child elements of current onto pending, in tree order
 						// (so the first child of current will be the next element to be
 						// popped from pending).

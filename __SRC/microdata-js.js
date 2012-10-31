@@ -1,4 +1,4 @@
-﻿/** @license Microdata API polyfill | @version 6.0 | MIT License | github.com/termi */
+﻿/** @license Microdata API polyfill | @version 6.1 | MIT License | github.com/termi */
 
 // ==ClosureCompiler==
 // @compilation_level ADVANCED_OPTIMIZATIONS
@@ -52,11 +52,11 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 
 	  , DOMStringCollection_init_add
 
-	  , _formElements = {'INPUT' : void 0, 'TEXTAREA' : void 0, 'PROGRESS' : void 0, 'METER' : void 0, 'SELECT' : void 0, 'OUTPUT' : void 0}
+	  , _formElements = {'INPUT' : null, 'TEXTAREA' : null, 'PROGRESS' : null, 'METER' : null, 'SELECT' : null, 'OUTPUT' : null}
 
-	  , _multimediaElement = {'AUDIO' : void 0, 'EMBED' : void 0, 'IFRAME' : void 0, 'IMG' : void 0, 'SOURCE' : void 0, 'TRACK' : void 0, 'VIDEO' : void 0}
+	  , _multimediaElement = {'AUDIO' : null, 'EMBED' : null, 'IFRAME' : null, 'IMG' : null, 'SOURCE' : null, 'TRACK' : null, 'VIDEO' : null}
 
-	  , _linkElement = {"A" : void 0, "AREA" : void 0, "LINK" : void 0}
+	  , _linkElement = {"A" : null, "AREA" : null, "LINK" : null}
 
 	  , _throwDOMException = function(errStr) {
 			var ex = Object.create(DOMException.prototype);
@@ -119,13 +119,8 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				}, thisObj);
 			}
 			else if(value !== null && _currentValue + "" !== value) {
-				try {
-					//tuche DOMStringCollection to forse update
-					_currentValue.add("");
-				}
-				catch(_e_) {
-
-				}
+				//touche DOMStringCollection to force update
+				_currentValue["contains"]("fake");
 			}
 
 			return _currentValue;
@@ -146,9 +141,11 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 		 * @this {Document|DocumentFragment}
 		 */
 	  , __getItems__ = function(itemTypes) {
-			return this.querySelectorAll(itemTypes ? itemTypes.trim().split(/\s+/).map(function(_itemType) {
+			return Array["from"](this.querySelectorAll(itemTypes ? itemTypes.trim().split(/\s+/).map(function(_itemType) {
 				return "[itemscope][itemtype~='" + _itemType + "']"
-			}).join(",") : "")
+			}).join(",") : "")).filter(function(node) {
+					return !node.getAttribute("itemprop"); //Item can't contain itemprop attribute
+				})
 		}
 
 	  , fixPrototypes_isfixed
@@ -183,24 +180,27 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 		 * @param {string} _string
 		 */
 		DOMStringCollection_init = function(_DOMStringCollection, _string) {
-			var string = _string || "",//default value
-				isChange = !!_DOMStringCollection.length;
+			var thisObj = _DOMStringCollection
+			  , string = _string || ""//default value
+			  , isChange = !!thisObj.length
+			;
 
 			if(isChange) {
-				while(_DOMStringCollection.length > 0)
-					delete _DOMStringCollection[--_DOMStringCollection.length];
+				while(thisObj.length > 0) {
+					delete thisObj[--thisObj.length];
+				}
 
-				_DOMStringCollection.value = "";
+				thisObj["value"] = "";
 			}
 
 			if(string) {
 				if(string = string.trim()) {
-					string.split(RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init_add, _DOMStringCollection);
+					string.split(RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init_add, thisObj);
 				}
-				_DOMStringCollection.value = _string;//empty value should stringify to contain the attribute's whitespace
+				thisObj["value"] = _string;//empty value should stringify to contain the attribute's whitespace
 			}
 
-			if(isChange && _DOMStringCollection._setter)_DOMStringCollection._setter.call(_DOMStringCollection._object_this, _DOMStringCollection.value);
+			if(isChange && thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj["value"]);
 		};
 
 		/**
@@ -209,8 +209,12 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 		 */
 		DOMStringCollection_init_add = function(token) {
 			this[this.length++] = token;
-		}
-		;
+		};
+
+		DOMStringCollection_init.remove_method_helper = function(find, p1, offset, string) {
+			return offset && find.length + offset < string.length ? " " : "";
+		};
+
 		/**
 		 * __Non-standart__
 		 * Utils.Dom.DOMStringCollection
@@ -225,69 +229,97 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			/**
 			 * Event fired when any change apply to the object
 			 */
-			this._getter = getter;
-			this._setter = setter;
-			this._object_this = object_this;
-			this.length = 0;
-			this.value = "";
+			this._getter = getter.bind(object_this);
+			this._setter = setter.bind(object_this);
+			this["length"] = 0;
+			this["value"] = "";
 
 			this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
 		};
 
 		_append(DOMStringCollection_.prototype, {
 			DOMStringCollection_check_currentValue_and_Token : function(token) {
-				var string = this._getter.call(this._object_this);
+				var string = this._getter();
 				if(string != this.value)DOMStringCollection_init(this, string);
 
 				if(token === "")_throwDOMException("SYNTAX_ERR");
 				if(~(token + "").indexOf(" "))_throwDOMException("INVALID_CHARACTER_ERR");
 			},
-			"add": function(token) {
-				var thisObj = this, v = thisObj.value;
+			"add": function() {
+				var tokens = arguments
+					, i = 0
+					, l = tokens.length
+					, token
+					, thisObj = this
+					, v = thisObj["value"]
+					, contains
+				;
 
-				if(thisObj.contains(token)//DOMStringCollection_check_currentValue_and_Token(token) here
-					)return;
+				do {
+					token = tokens[i];
+					contains = thisObj.contains(token);//DOMStringCollection_check_currentValue_and_Token(token) here
 
-				thisObj.value += ((v && !v.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
+					if(!contains){
+						v += ((i > 0 || v && !v.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
 
-				this[this.length++] = token;
+						this[this.length++] = token;
+					}
+				}
+				while(++i < l);
 
-				if(thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value);
+				thisObj["value"] = v;
+				if(thisObj._setter)thisObj._setter(thisObj["value"]);
 			},
-			"remove": function(token) {
-				this.DOMStringCollection_check_currentValue_and_Token(token);
+			"remove": function() {
+				var tokens = arguments
+					, i = 0
+					, l = tokens.length
+					, token
+					, thisObj = this
+					, v = thisObj["value"]
+					, k
+					, itemsArray = thisObj["value"].split(" ")
+				;
 
-				var i, itemsArray, thisObj = this;
+				do {
+					token = tokens[i];
 
-				thisObj.value = thisObj.value.replace(new RegExp("((?:\ +|^)" + token + "(?:\ +|$))", "g"), function(find, p1, offset, string) {
-					return offset && find.length + offset < string.length ? " " : "";
-				});
+					this.DOMStringCollection_check_currentValue_and_Token(token);
 
-				itemsArray = _String_split.call(thisObj.value, " ");
+					v = v.replace(new RegExp("((?:\\ +|^)" + token + "(?:\\ +|$))", "g"), DOMStringCollection_init.remove_method_helper);
+				}
+				while(++i < l);
 
-				for(i = thisObj.length - 1 ; i > 0  ; --i) {
-					if(!(thisObj[i] = itemsArray[i])) {
+				for(k = thisObj.length - 1 ; k > 0  ; --k) {
+					if(!(thisObj[k] = itemsArray[k])) {
 						thisObj.length--;
-						delete thisObj[i];
+						delete thisObj[k];
 					}
 				}
 
-				if(thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj.value)
+				thisObj["value"] = v;
+				if(thisObj._setter)thisObj._setter(thisObj["value"]);
 			},
 			"contains": function(token) {
 				this.DOMStringCollection_check_currentValue_and_Token(token);
 
-				return !!~(" " + this.value + " ").indexOf(" " + token + " ");
+				return !!~(" " + this["value"] + " ").indexOf(" " + token + " ");
 			},
 			"item": function(index) {
 				this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
 
 				return this[index] || null;
 			},
-			"toggle": function(token) {
-				var result = thisObj.contains(token); //DOMStringCollection_checkToken(token) here;
+			"toggle": function(token, forse) {
+				var thisObj = this
+					, result = thisObj.contains(token)//DOMStringCollection_checkToken(token) here;
+					, method = result ?
+						forse !== true && "remove"
+						:
+						forse !== false && "add"
+					;
 
-				this[result ? 'add' : 'remove'](token);
+				if(method)this[method](token);
 
 				return result;
 			}
