@@ -2,7 +2,7 @@
 
 - __Spec__: http://www.whatwg.org/specs/web-apps/current-work/multipage/microdata.html
 - __Demo__: http://jsfiddle.net/termi/Nsq27/
-- __Status__: Stable, but be carefull in IE < 9
+- __Status__: Stable, but be carefull in IE8
 
 ## Example
 
@@ -48,25 +48,16 @@ More examples in `example` folder
 <script src="microdata-js.js"></script>
 ```
 
- - For IE6+ support:
+ - For IE8+ support:
   1. Add ES5 and DOM shim and microdata script as:
 
 ```html
-<!--[if lt IE 8]>
-<script src="a.ielt8.js"></script>
 <!--[if IE 8]>
 <script src="a.ie8.js"></script>
 <![endif]-->
 <script src="a.js"></script>
-<!--[if gt IE 7]><!-->
 <script src="microdata-js.js"></script>
-<!--<![endif]-->
-<!--[if lt IE 8]>
-<script src="microdata-js.ielt8.js"></script>
-<![endif]-->
 ```
-
-  3. Put `a.ielt8.htc` (DOM shim for IE < 8) and `a.ie6.ielt8.htc` (for IE6) and `microdata-js.ielt8.htc` to the root of your site
 
 ## EXTRAs
 TODO::
@@ -77,12 +68,11 @@ TODO::
  - Implementation of PropertyNodeList and HTMLPropertiesCollection prototypes
  - Extending DocumentFragment.prototype with getItems function
  - Extending PropertyNodeList and HTMLPropertiesCollection prototypes with toJSON functions
- - IE < 8 support and maybe need some extra work
+ - Inherit native PropertyNodeList and HTMLPropertiesCollection prototypes from Array
  
 ## Browsers support
 
  - Opera < 12, Google Chrome, Safary, FireFox, IE8 and maybe others
- - IE < 8 support with (ES/DOM shim)
 
 ## Tests
 
@@ -90,19 +80,15 @@ TODO::
 		
 ## LIMITATION
 
- 1. Require Utils.Dom.DOMStringCollection (DOMSettableTokenList like object) (created in https://github.com/termi/ES5-DOM-SHIM/)
- 2. `microdata-js.ielt8.js` due to https://github.com/h5bp/html5-boilerplate/issues/378 i can't detection IE by `@cc`.
- 3. Require `window.Node.prototype.ielt8` for IE < 8 detection, wich is created in https://github.com/termi/ES5-DOM-SHIM/
- 4. Opera >= 11.60:
+ 1. Require window.DOMStringCollection (DOMSettableTokenList like object) (created by https://github.com/termi/ES5-DOM-SHIM/)
+ 2. Opera >= 11.60:
   - PropertyNodeList.values, PropertyNodeList.toJSON and HTMLPropertiesCollection.toJSON propertys will be available only after window.onload event
 
 ## TODO
 
- 1. [Raynos DOM-shim](https://github.com/Raynos/DOM-shim/) support
- 2. Live HTMLElement.prototype without window.microdata_liveProperties option
- 3. Improvement speed of selecting Microdata ilements in IE < 8
- 4. Delete code adding "values" property if it not compliance with FINALE Microdata specification
- 5. [allows multiple values in itemtype](http://html5.org/tools/web-apps-tracker?from=6667&to=6668) ?
+ 1. Live HTMLElement.prototype without window.microdata_liveProperties option
+ 2. Delete code adding "values" property if it not compliance with FINALE Microdata specification
+ 3. FireFox bug $0.itemId = "" -> $0.itemId != ""
  
 ## License
 

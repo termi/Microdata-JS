@@ -1,4 +1,4 @@
-﻿/** @license Microdata API polyfill | @version 6.1 | MIT License | github.com/termi */
+﻿/** @license Microdata API polyfill | @version 0.6.1 | MIT License | github.com/termi */
 
 // ==ClosureCompiler==
 // @compilation_level ADVANCED_OPTIMIZATIONS
@@ -28,29 +28,21 @@
 /** @define {boolean} */
 var __GCC__INCLUDE_EXTRAS__ = true;//Set it to 'true' if you need Extra behaviors
 /** @define {boolean} */
-var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
+var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = true;
 // [[[|||---=== GCC DEFINES END ===---|||]]]
 
 "use strict";
 
 (function(global) {
 	var
-		DOMStringCollection_
+		DOMStringCollection
 		/**
 		 * Fix Microdata Item Element for browsers with Microdata support
-		 * @param {Window} global
+		 * @param {(Object|Window)} global
 		 */
 	  , fixPrototypes
 
-	  , _append
-
-	  , RE_DOMSettableTokenList_lastSpaces
-
-	  , RE_DOMSettableTokenList_spaces
-
-	  , DOMStringCollection_init
-
-	  , DOMStringCollection_init_add
+		, inherit_HTMLPropertyCollection_and_PropertyNodeList_from_Array
 
 	  , _formElements = {'INPUT' : null, 'TEXTAREA' : null, 'PROGRESS' : null, 'METER' : null, 'SELECT' : null, 'OUTPUT' : null}
 
@@ -112,10 +104,10 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				_currentValue = _[attributeName];
 
 			if(!_currentValue) {
-				_currentValue = _[attributeName] = new DOMStringCollection_(function() {
+				_currentValue = _[attributeName] = new DOMStringCollection(function() {
 					return thisObj.getAttribute(attributeName);
-				}, function() {
-					thisObj.setAttribute(attributeName, this + "");
+				}, function(value) {
+					thisObj.setAttribute(attributeName, value);
 				}, thisObj);
 			}
 			else if(value !== null && _currentValue + "" !== value) {
@@ -141,9 +133,13 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 		 * @this {Document|DocumentFragment}
 		 */
 	  , __getItems__ = function(itemTypes) {
-			return Array["from"](this.querySelectorAll(itemTypes ? itemTypes.trim().split(/\s+/).map(function(_itemType) {
+			if( itemTypes ) {
+				itemTypes = String(itemTypes).trim();
+			}
+
+			return _Array_from(this.querySelectorAll(itemTypes ? itemTypes.split(/\s+/).map(function(_itemType) {
 				return "[itemscope][itemtype~='" + _itemType + "']"
-			}).join(",") : "")).filter(function(node) {
+			}).join(",") : "[itemscope]")).filter(function(node) {
 					return !node.getAttribute("itemprop"); //Item can't contain itemprop attribute
 				})
 		}
@@ -152,13 +148,17 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 
 	  , fixPrototypes_fixedDocumentFragment
 
-	  , HTMLDocument_prototype = (HTMLDocument || {}).prototype || {}
+		, tmp
+
+	  , HTMLDocument_prototype = (tmp = (global.HTMLDocument || global.Document)) && tmp.prototype
 
 	  , hasNative_getItems = "getItems" in document
+
+		, _Array_from = Array["from"] || Function.prototype.call.bind(Array.prototype.slice)
 	;
 
 	if(__GCC__INCLUDE_DOMSTRINGCOLLECTION__) {
-		_append = function(obj, ravArgs) {
+		var _append = function(obj, ravArgs) {
 			for(var i = 1; i < arguments.length; i++) {
 				var extension = arguments[i];
 				for(var key in extension)
@@ -170,19 +170,63 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			return obj;
 		};
 
+		var _String_contains_ = String.prototype["contains"] || function(substring, fromIndex) {
+			fromIndex = fromIndex != void 0 ? /*Number["toInteger"]*/!isNaN(fromIndex) : 0;
+			return !!~this.indexOf(substring, fromIndex);
+		};
+
+
+		var _classList_toggle = function(token, forse) {
+			token += "";
+			var thisObj = this
+				, result = thisObj.contains(token)
+				, method = result ?
+					forse !== true && "remove"
+					:
+					forse !== false && "add"
+				;
+
+			if(method)this[method](token);
+
+			return result;
+		};
+
 		/** @type {RegExp} @const */
-		RE_DOMSettableTokenList_lastSpaces = /\s+$/g;
+		var RE_DOMSettableTokenList_lastSpaces = /\s+$/g;
 		/** @type {RegExp} @const */
-		RE_DOMSettableTokenList_spaces = /\s+/g;
+		var RE_DOMSettableTokenList_spaces = /\s+/g;
+
+		var _unsafe_Function_bind_ = Function.prototype.bind;
+		var _String_split_ = String.prototype.split;
+		var _String_trim_ = String.prototype.trim;
 
 		/**
-		 * @param {DOMStringCollection_} _DOMStringCollection
+		 * DOMStringCollection
+		 * DOMSettableTokenList like object
+		 * http://www.w3.org/TR/html5/common-dom-interfaces.html#domsettabletokenlist-0
+		 * @param {Function} getter callback for onchange event
+		 * @param {Function} setter callback for onchange event
+		 * @param {Object} object_this context of onchange function
+		 * @constructor
+		 */
+		DOMStringCollection = function(getter, setter, object_this) {
+			/**
+			 * Event fired when any change apply to the object
+			 */
+			this["__getter__"] = _unsafe_Function_bind_.call(getter, object_this);
+			this["__setter__"] = _unsafe_Function_bind_.call(setter, object_this);
+			this["length"] = 0;
+			this["value"] = "";
+
+			this.DOMStringCollection_check_currentValue();
+		};
+		/**
+		 * @param {DOMStringCollection} thisObj
 		 * @param {string} _string
 		 */
-		DOMStringCollection_init = function(_DOMStringCollection, _string) {
-			var thisObj = _DOMStringCollection
-			  , string = _string || ""//default value
-			  , isChange = !!thisObj.length
+		var DOMStringCollection_init = function(thisObj, _string) {
+			var string = _string || ""//default value
+				, isChange = !!thisObj.length
 			;
 
 			if(isChange) {
@@ -194,56 +238,36 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			}
 
 			if(string) {
-				if(string = string.trim()) {
-					string.split(RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init_add, thisObj);
+				if(string = _String_trim_.call(string)) {
+					_String_split_.call(string, RE_DOMSettableTokenList_spaces).forEach(DOMStringCollection_init.add, thisObj);
 				}
 				thisObj["value"] = _string;//empty value should stringify to contain the attribute's whitespace
 			}
 
-			if(isChange && thisObj._setter)thisObj._setter.call(thisObj._object_this, thisObj["value"]);
+			if(isChange && thisObj["__setter__"])thisObj["__setter__"](thisObj["value"]);
 		};
-
 		/**
 		 * @param {string} token
-		 * @this {DOMStringCollection_}
+		 * @this {DOMStringCollection}
 		 */
-		DOMStringCollection_init_add = function(token) {
+		DOMStringCollection_init.add = function(token) {
 			this[this.length++] = token;
 		};
 
-		DOMStringCollection_init.remove_method_helper = function(find, p1, offset, string) {
-			return offset && find.length + offset < string.length ? " " : "";
-		};
-
-		/**
-		 * __Non-standart__
-		 * Utils.Dom.DOMStringCollection
-		 * DOMSettableTokenList like object
-		 * http://www.w3.org/TR/html5/common-dom-interfaces.html#domsettabletokenlist-0
-		 * @param {Function} getter callback for onchange event
-		 * @param {Function} setter callback for onchange event
-		 * @param {Object} object_this context of onchange function
-		 * @constructor
-		 */
-		DOMStringCollection_ = function(getter, setter, object_this) {
-			/**
-			 * Event fired when any change apply to the object
-			 */
-			this._getter = getter.bind(object_this);
-			this._setter = setter.bind(object_this);
-			this["length"] = 0;
-			this["value"] = "";
-
-			this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
-		};
-
-		_append(DOMStringCollection_.prototype, {
-			DOMStringCollection_check_currentValue_and_Token : function(token) {
-				var string = this._getter();
-				if(string != this.value)DOMStringCollection_init(this, string);
+		_append(DOMStringCollection.prototype, /** @lends {DOMStringCollection.prototype} */{
+			DOMStringCollection_check_currentValue : function() {
+				var string = this["__getter__"]();
+				if(string !== this["value"]) {
+					DOMStringCollection_init(this, string);
+				}
+			},
+			DOMStringCollection_check_Token_and_argumentsCount : function(token, argumentsCount) {
+				if(argumentsCount === 0) {
+					_throwDOMException("WRONG_ARGUMENTS_ERR");
+				}
 
 				if(token === "")_throwDOMException("SYNTAX_ERR");
-				if(~(token + "").indexOf(" "))_throwDOMException("INVALID_CHARACTER_ERR");
+				if(RE_DOMSettableTokenList_spaces.test(token))_throwDOMException("INVALID_CHARACTER_ERR");
 			},
 			"add": function() {
 				var tokens = arguments
@@ -251,24 +275,36 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 					, l = tokens.length
 					, token
 					, thisObj = this
-					, v = thisObj["value"]
-					, contains
+					, currentValue
+					, prevValue
+					, updated = false
 				;
 
-				do {
-					token = tokens[i];
-					contains = thisObj.contains(token);//DOMStringCollection_check_currentValue_and_Token(token) here
+				this.DOMStringCollection_check_currentValue();
+				this.DOMStringCollection_check_Token_and_argumentsCount(null, l);
 
-					if(!contains){
-						v += ((i > 0 || v && !v.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
+				currentValue = thisObj["value"];
+				prevValue = " " + currentValue + " ";
+
+				do {
+					token = tokens[i] + "";
+
+					this.DOMStringCollection_check_Token_and_argumentsCount(token);
+
+					if( !_String_contains_.call(prevValue, " " + token + " ") ) { // not contains
+						currentValue += ((i > 0 || currentValue && !currentValue.match(RE_DOMSettableTokenList_lastSpaces) ? " " : "") + token);
 
 						this[this.length++] = token;
+
+						updated = true;
 					}
 				}
 				while(++i < l);
 
-				thisObj["value"] = v;
-				if(thisObj._setter)thisObj._setter(thisObj["value"]);
+				if( updated ) {
+					thisObj["value"] = currentValue;
+					if(thisObj["__setter__"])thisObj["__setter__"](thisObj["value"]);
+				}
 			},
 			"remove": function() {
 				var tokens = arguments
@@ -276,65 +312,135 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 					, l = tokens.length
 					, token
 					, thisObj = this
-					, v = thisObj["value"]
-					, k
-					, itemsArray = thisObj["value"].split(" ")
+					, currentValue
+					, currentValueLength
+					, itemsArray
+					, newItemsArray = []
+					, filterObject = {}
 				;
 
+				this.DOMStringCollection_check_currentValue();
+				this.DOMStringCollection_check_Token_and_argumentsCount(null, l);
+
+				currentValue = thisObj["value"];
+				currentValueLength = currentValue.length;
+
 				do {
-					token = tokens[i];
+					token = tokens[i] + "";
 
-					this.DOMStringCollection_check_currentValue_and_Token(token);
+					this.DOMStringCollection_check_Token_and_argumentsCount(token);
 
-					v = v.replace(new RegExp("((?:\\ +|^)" + token + "(?:\\ +|$))", "g"), DOMStringCollection_init.remove_method_helper);
+					filterObject[token] = null;
 				}
 				while(++i < l);
 
-				for(k = thisObj.length - 1 ; k > 0  ; --k) {
-					if(!(thisObj[k] = itemsArray[k])) {
-						thisObj.length--;
-						delete thisObj[k];
+				itemsArray = _String_split_.call(currentValue, " ");
+				currentValue = "";
+				for(i = 0, l = itemsArray.length ; i < l ; ++i) {
+					if(!((token = itemsArray[i]) in filterObject)) {
+						newItemsArray.push(token);
+						currentValue += ((i ? " " : "") + token);
 					}
 				}
 
-				thisObj["value"] = v;
-				if(thisObj._setter)thisObj._setter(thisObj["value"]);
+				if( currentValueLength !== currentValue.length ) {
+					for(i = thisObj.length - 1 ; i >= 0 ; --i) {
+						if(!(thisObj[i] = newItemsArray[i])) {
+							thisObj.length--;
+							delete thisObj[i];
+						}
+					}
+
+					thisObj["value"] = currentValue;
+					if(thisObj["__setter__"])thisObj["__setter__"](thisObj["value"]);
+				}
 			},
 			"contains": function(token) {
-				this.DOMStringCollection_check_currentValue_and_Token(token);
+				this.DOMStringCollection_check_Token_and_argumentsCount(token, arguments.length);
+				this.DOMStringCollection_check_currentValue();
 
-				return !!~(" " + this["value"] + " ").indexOf(" " + token + " ");
+				return _String_contains_.call(" " + this["value"] + " ", " " + token + " ");
 			},
 			"item": function(index) {
-				this.DOMStringCollection_check_currentValue_and_Token("1");//"1" - fakse token, need only thisObj.value check
+				this.DOMStringCollection_check_currentValue();
 
 				return this[index] || null;
 			},
-			"toggle": function(token, forse) {
-				var thisObj = this
-					, result = thisObj.contains(token)//DOMStringCollection_checkToken(token) here;
-					, method = result ?
-						forse !== true && "remove"
-						:
-						forse !== false && "add"
-					;
-
-				if(method)this[method](token);
-
-				return result;
-			}
+			"toggle": _classList_toggle
 		});
 
-		DOMStringCollection_.prototype.toString = function() {//_append function do not overwrite Object.prototype.toString
-			return this.value || ""
+		DOMStringCollection.prototype.toString = function() {//_append function do not overwrite Object.prototype.toString
+			this.DOMStringCollection_check_currentValue();
+
+			return this["value"] || ""
 		};
 	}
 	else {
 		//import
-		DOMStringCollection_ = global["DOMStringCollection"];
+		DOMStringCollection = global["DOMStringCollection"];
 	}
 
 	if(__GCC__INCLUDE_EXTRAS__) {
+		inherit_HTMLPropertyCollection_and_PropertyNodeList_from_Array = function() {
+			// HTMLPropertiesCollection and PropertyNodeList is inherited from NodeList, NodeList inherited from Array
+
+			var _tmp_
+				, _Array_prototype_ = Array.prototype
+				, _Object_prototype = Object.prototype
+			;
+
+			[
+				// prototypes
+				(_tmp_ = global["PropertyNodeList"]) && _tmp_.prototype
+				, (_tmp_ = global["HTMLPropertiesCollection"]) && _tmp_.prototype
+			].forEach(function(instance, index) {
+					var proto;
+					if( index < 3 || (instance && !("map" in instance) && !Array.isArray(instance)) ) {
+						if( index < 3 ) {
+							proto = instance;
+						}
+						else {
+							//in old FF nodeList_proto.__proto__ != nodeList_proto.constructor.prototype
+							proto = instance.__proto__ || instance.constructor && instance.constructor.prototype;
+						}
+
+						if( proto && proto !== _Array_prototype_ && proto !== _Object_prototype ) {// Paranoiac mode
+
+							this(proto);
+						}
+					}
+				}, _Array_prototype_.forEach.bind(
+					[
+						"join", "forEach", "every", "some", "map", "filter", "reduce", "reduceRight", "indexOf", "lastIndexOf", "slice", "contains", "find", "findIndex"
+						//index: 14
+						, "splice", "concat", "reverse", "push", "pop", "shift", "unshift", "sort"
+					]
+					//Unsafe:: "splice", "concat", "reverse", "push", "pop", "shift", "unshift", "sort"
+					, function(key, index) {
+						var value;
+						if( !(key in this) && _Array_prototype_[key] ) {
+							value = {
+								"configurable": true
+								, "enumerable": false
+								, "writable": true
+							};
+							if(index < 15) {
+								value["value"] = _Array_prototype_[key];
+							}
+							else {
+								value["value"] = function() {
+									_throwDOMException("NO_MODIFICATION_ALLOWED_ERR");
+								}
+							}
+							Object.defineProperty(this, key, value);
+						}
+					}
+				)
+			);
+
+			tmp = _Array_prototype_ = _Object_prototype = null;
+		};
+
 		fixPrototypes = function(global) {
 
 			/* too difficult
@@ -398,6 +504,7 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				catch(e) {}
 
 				//[BUGFIX] Fix old Opera Microdata.itemtype implimentation
+				// http://html5.org/tools/web-apps-tracker?from=6667&to=6668
 				if(hasNative_getItems && HTMLDocument_prototype["getItems"] != __getItems__) {
 					test_div["itemScope"] = true;
 					test_div["itemType"] = "t";
@@ -432,19 +539,23 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				}
 				else {
 					var _PropertyNodeList = global["PropertyNodeList"];
-					if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON =
-						/**
-						 * @this {PropertyNodeList}
-						 * @return {Object} json
-						 */
-							function() {
-							return this.getValues().map(function(cur) {
-								if(cur instanceof Element) {
-									cur = itemToJSON(cur);//if cur is not Microdata element return undefined
-								}
-								return cur;
-							});
-						};
+
+					var isNode = function(obj) {
+						return obj && typeof obj == "object" && "nodeType" in obj;
+					};
+
+					/**
+					 * @this {PropertyNodeList}
+					 * @return {Object} json
+					 */
+					if(!(_a = _PropertyNodeList.prototype).toJSON)_a.toJSON = function() {
+						return this["getValues"]().map(function(cur) {
+							if( isNode(cur) ) {
+								cur = itemToJSON(cur);//if cur is not Microdata element return undefined
+							}
+							return cur;
+						});
+					};
 
 					//Fix `itemValue` with FORM elements
 					var test_input = document.createElement("input");
@@ -486,6 +597,8 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 						return result;
 					};
 
+					inherit_HTMLPropertyCollection_and_PropertyNodeList_from_Array();
+
 					fixPrototypes_isfixed = true;
 				}
 			}
@@ -522,19 +635,17 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				/* PUBLICK */
 				/** @type {number} */
 				thisObj["length"] = 0;
-				/** @type {Array} "values" property http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api */
-				thisObj["values"] = [];
 			};
 			/**
 			 * Non-standart (not in native _PropertyNodeList class) method
 			 * @param {Element} newNode DOM-element to add
 			 */
-			_PropertyNodeList.prototype["_push"] = function(newNode, prop_value) {
+			_PropertyNodeList.prototype["_push"] = function(newNode) {
 				var thisObj = this;
 
 				thisObj[thisObj["length"]++] = newNode;
-				thisObj["values"].push(prop_value)
 			};
+			_PropertyNodeList.prototype["names"] = [];
 			/**
 			 * @return {Array}
 			 */
@@ -556,6 +667,14 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 
 
 			// --- === HTMLPropertiesCollection CLASS [BEGIN] === ---
+			function _DOMStringList_item(index) {
+				index = +index;
+
+				if( index === NaN )return null;
+
+				return this[index];
+			}
+
 			/**
 			 * @constructor
 			 */
@@ -567,6 +686,9 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				//It's also possible to get a list of all the property names using the object's names IDL attribute.
 				//http://www.w3.org/TR/html5/microdata.html#using-the-microdata-dom-api
 				thisObj["names"] = [];
+				// TODO:: "names" should be DOMStringList
+				thisObj["names"].item = _DOMStringList_item;
+				// thisObj["names"].contains should be in Array
 			};
 
 			/**
@@ -584,7 +706,12 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				}
 
 				thisObj["length"] = 0;
-				thisObj["names"] = [];
+				if( thisObj["names"] && thisObj["names"].splice ) {
+					thisObj["names"].splice(0, thisObj["names"].length);
+				}
+				else {
+					thisObj["names"] = [];
+				}
 			};
 
 			/**
@@ -593,12 +720,13 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			 */
 			_HTMLPropertiesCollection.prototype["_push"] = function(node) {
 				var thisObj = this,
-					prop_value = node["itemValue"],
 					prop_name = node["itemProp"],
 					name,
 					k = -1;
 
-				if(!prop_name)return;
+				if( !prop_name ) {
+					return;
+				}
 
 				thisObj[thisObj["length"]++] = node;
 
@@ -607,14 +735,22 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 				 };*/
 
 
-				while(name = prop_name[++k]) {
+				while( name = prop_name[++k] ) {
+					if( !thisObj[name]
+						|| thisObj.hasOwnProperty(name) && !isNaN(name)//name can be numerical
+					) {
+						thisObj[name] = new _PropertyNodeList();
+					}
+					else if(typeof thisObj[name] !== "object" || name === "names") {
+						// itemprop names must not override builtin properties
+						continue;
+					}
+
 					if(!~thisObj["names"].indexOf(name)) {
 						thisObj["names"].push(name);
 					}
 
-					(
-						thisObj[name] || (thisObj[name] = new _PropertyNodeList())
-						)["_push"](node, prop_value);
+					thisObj[name]["_push"](node);
 				}
 			};
 
@@ -647,7 +783,6 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			};
 			// --- === HTMLPropertiesCollection CLASS [END] === ---
 
-
 			// ------- Extending Element.prototype ---------- //
 			// For IE < 8 support use microdata-js.ielt8.js and microdata-js.ielt8.htc
 
@@ -668,7 +803,18 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 						return this.getAttribute("itemscope") !== null
 					},
 					"set" : function(val) {
-						val ? this.setAttribute("itemscope", "") : this.removeAttribute("itemscope");
+						if( val ) {
+							this.setAttribute("itemscope", "");
+						}
+						else {
+							var _;
+
+							if( (_ = this["_"]) && (_ = _["_mcrdt_"]) && (_ = _._properties_CACHE__) ) {
+								_._clear();
+							}
+
+							this.removeAttribute("itemscope");
+						}
 
 						return val;
 					}
@@ -700,18 +846,28 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 
 				"properties" : {
 					"get" : function() {
-						var thisObj = this;
+						var thisObj = this
+							, itemScope = thisObj.itemScope
+						;
 
 						if(!thisObj["_"])thisObj["_"] = {};
 						var _ = thisObj["_"]["_mcrdt_"] || (thisObj["_"]["_mcrdt_"] = {});
 
 						var properties = _._properties_CACHE__;
 
-						if(properties) {
-							if(!global["microdata_liveProperties"])return properties;
-							else properties._clear();
+						if( properties ) {
+							if( !global["microdata_liveProperties"] && itemScope ) {
+								return properties;
+							}
+							else {
+								properties._clear();
+							}
 						}
 						else properties = _._properties_CACHE__ = new _HTMLPropertiesCollection();
+
+						if( !itemScope ) {
+							return properties;
+						}
 
 						var pending = [],
 							props = [],
@@ -768,7 +924,7 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 								// as its nearest ancestor element with an itemscope attribute
 								// specified, then remove candidate from pending.
 								return !ancestors.some(function(ancestor) {
-									var elementIndex = -1,
+									var elementIndex,
 										elementParent,
 										elementScope = null;
 
@@ -814,7 +970,7 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 						}
 
 
-						props.forEach(properties["_push"].bind(properties));
+						props.forEach(properties["_push"], properties);
 
 						return properties;
 					}
@@ -822,7 +978,10 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			});
 
 			//export
-			HTMLDocument_prototype["getItems"] = document["getItems"] = __getItems__;
+			document["getItems"] = __getItems__;
+			if( HTMLDocument_prototype ) {
+				HTMLDocument_prototype["getItems"] = __getItems__;
+			}
 			if(!global["PropertyNodeList"])global["PropertyNodeList"] = _PropertyNodeList;
 			if(!global["HTMLPropertiesCollection"])global["HTMLPropertiesCollection"] = _HTMLPropertiesCollection;
 
@@ -830,7 +989,10 @@ var __GCC__INCLUDE_DOMSTRINGCOLLECTION__ = false;
 			fixPrototypes(global);
 		})
 		:
-		fixPrototypes)(global)
+		fixPrototypes)(global);
+
+	//cleanup
+	tmp = null;
 
 })(window);
 
